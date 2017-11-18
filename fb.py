@@ -1,5 +1,6 @@
 import requests
 import facebook
+import time
 
 class Facebook():
 
@@ -14,7 +15,7 @@ class Facebook():
     
     def initApi(self):
         if self.login():
-            self.api = facebook.GraphAPI(access_token=self.userAccessToken, version="2.10")
+            self.api = facebook.GraphAPI(access_token=self.userAccessToken)
 
     def login(self):
         if self.userAccessToken is None:

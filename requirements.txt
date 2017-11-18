@@ -1,0 +1,3 @@
+facebook-sdk
+python-twitter
+requests
