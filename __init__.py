@@ -28,8 +28,10 @@ from os.path import dirname
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
+from fb import Facebook
+from tw import Twitter
 
-__author__ = 'eward'
+__author__ = 'ldevalbray'
 
 # Logger: used for debug lines, like "LOGGER.debug(xyz)". These
 # statements will show up in the command line when running Mycroft.
@@ -38,30 +40,25 @@ LOGGER = getLogger(__name__)
 # The logic of each skill is contained within its own class, which inherits
 # base methods from the MycroftSkill class with the syntax you can see below:
 # "class ____Skill(MycroftSkill)"
-class HelloWorldSkill(MycroftSkill):
+class SocialMediaSkill(MycroftSkill):
 
     # The constructor of the skill, which calls MycroftSkill's constructor
     def __init__(self):
-        super(HelloWorldSkill, self).__init__(name="HelloWorldSkill")
+        super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
+        self.FB = 'facebook'
+        self.TW = 'twitter'
+        self.fb = Facebook()
+        self.tw = Twitter()
 
     # This method loads the files needed for the skill's functioning, and
     # creates and registers each intent that the skill uses
     def initialize(self):
         self.load_data_files(dirname(__file__))
 
-        thank_you_intent = IntentBuilder("ThankYouIntent").\
-            require("ThankYouKeyword").build()
-        self.register_intent(thank_you_intent, self.handle_thank_you_intent)
-
-        how_are_you_intent = IntentBuilder("HowAreYouIntent").\
-            require("HowAreYouKeyword").build()
-        self.register_intent(how_are_you_intent,
-                             self.handle_how_are_you_intent)
-
-        hello_world_intent = IntentBuilder("HelloWorldIntent").\
-            require("HelloWorldKeyword").build()
-        self.register_intent(hello_world_intent,
-                             self.handle_hello_world_intent)
+        post_intent = IntentBuilder("PostIntent").\
+            require("PostIntentKeyword").build()
+        self.register_intent(post_intent,
+                             self.handle_post_intent)
 
     # The "handle_xxxx_intent" functions define Mycroft's behavior when
     # each of the skill's intents is triggered: in this case, he simply
@@ -78,6 +75,17 @@ class HelloWorldSkill(MycroftSkill):
     def handle_hello_world_intent(self, message):
         self.speak_dialog("hello.world")
 
+    def handle_post_intent(self, message, social= 'all'):
+        print message
+        # if social == self.FB:
+        #     self.fb.post(message)
+        # elif social == self.TW:
+        #     self.tw.post(message)
+        # else:
+        #     self.fb.post(message)
+        #     self.tw.post(message)
+        self.speak_dialog("post")
+
     # The "stop" method defines what Mycroft does when told to stop during
     # the skill's execution. In this case, since the skill's functionality
     # is extremely simple, the method just contains the keyword "pass", which
@@ -88,4 +96,4 @@ class HelloWorldSkill(MycroftSkill):
 # The "create_skill()" method is used to create an instance of the skill.
 # Note that it's outside the class itself.
 def create_skill():
-    return HelloWorldSkill()
+    return SocialMediaSkill()
