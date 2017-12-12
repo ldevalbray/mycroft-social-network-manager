@@ -36,6 +36,7 @@ __author__ = 'ldevalbray'
 
 LOGGER = getLogger(__name__)
 
+
 class SocialMediaSkill(MycroftSkill):
 
     def __init__(self):
@@ -45,7 +46,6 @@ class SocialMediaSkill(MycroftSkill):
         self.fb = Facebook()
         self.tw = Twitter()
 
-  
     def initialize(self):
         self.load_data_files(dirname(__file__))
 
@@ -54,7 +54,21 @@ class SocialMediaSkill(MycroftSkill):
         self.register_intent(post_intent,
                              self.handle_post_intent)
 
-    def handle_thank_you_intent(self, message): 
+        thank_you_intent = IntentBuilder("ThankYouIntent").\
+            require("ThankYouKeyword").build()
+        self.register_intent(thank_you_intent, self.handle_thank_you_intent)
+
+        how_are_you_intent = IntentBuilder("HowAreYouIntent").\
+            require("HowAreYouKeyword").build()
+        self.register_intent(how_are_you_intent,
+                             self.handle_how_are_you_intent)
+
+        hello_world_intent = IntentBuilder("HelloWorldIntent").\
+            require("HelloWorldKeyword").build()
+        self.register_intent(hello_world_intent,
+                             self.handle_hello_world_intent)
+
+    def handle_thank_you_intent(self, message):
         self.speak_dialog("welcome")
 
     def handle_how_are_you_intent(self, message):
@@ -63,7 +77,7 @@ class SocialMediaSkill(MycroftSkill):
     def handle_hello_world_intent(self, message):
         self.speak_dialog("hello.world")
 
-    def handle_post_intent(self, message, social= 'all'):
+    def handle_post_intent(self, message, social='all'):
         print message
         # if social == self.FB:
         #     self.fb.post(message)
@@ -76,6 +90,7 @@ class SocialMediaSkill(MycroftSkill):
 
     def stop(self):
         pass
+
 
 def create_skill():
     return SocialMediaSkill()

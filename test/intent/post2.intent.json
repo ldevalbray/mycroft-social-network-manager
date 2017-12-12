@@ -1,0 +1,7 @@
+{
+    "utterance": "Post something",
+    "intent_type": "PostIntent",
+    "intent": {
+      "HowAreYouKeyword": "post something"
+    }
+  }
