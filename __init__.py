@@ -79,7 +79,7 @@ class SocialMediaSkill(MycroftSkill):
     def handle_hello_world_intent(self, message):
         self.speak_dialog("hello.world")
 
-    def handle_post_intent(self, message, social='all'):
+    def handle_post_intent(self, message):
         print message
         # if social == self.FB:
         #     self.fb.post(message)
