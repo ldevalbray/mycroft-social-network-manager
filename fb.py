@@ -8,8 +8,8 @@ class Facebook():
         self.api = None
         self.appAccessToken = '659166094472687|9f9d0665f86c3a6a88838450bfc50e9b'
         self.URL = 'https://graph.facebook.com/v2.11/'
-        #self.userAccessToken = None
-        self.userAccessToken = 'EAAJXghDote8BALoPO76iZC926BAzZCllZCzIn1EsWlX6vZBHkUbzzKlZATSl03Olxcrp4QqXmr5QlgKdxi2gxTwcgn7mNHJ6Owz5wrBJqjsI2xWbk8ZBqRfDZBmTracCZC5TBNc0BBQv4sMVnw3hNkV5TIKYgjxOz2cxvynZBTwWVZAAZDZD'
+        self.userAccessToken = None
+        # self.userAccessToken = ''
         self.userAccessTokenExpirationDate = '5181085'
         self.initApi()
     

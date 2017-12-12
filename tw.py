@@ -10,9 +10,9 @@ class Twitter():
         self.api = None
         self.consumerKey = 'suWlKq5ptOfGP7U2e6QEYcgT0'
         self.consumerSecret = 'e7mvduA4qn1TtkbiWNX30QBDBLg0XcUUjYflrfI77OjK6bf7XE'
-        #self.userAccessToken = None
-        self.userAccessToken = '931527061457571840-3u23arFdxoodBOvuxRyJ1QJqA1hXaTY'
-        self.userAccessTokenSecret = '5DquBNlWTZVvQ4EYlpoP9GfJEwVq2H77qESKYckGhlkf2'
+        self.userAccessToken = None
+        # self.userAccessToken = ''
+        self.userAccessTokenSecret = ''
         self.initApi()
        
 
