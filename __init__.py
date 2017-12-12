@@ -66,7 +66,7 @@ class SocialMediaSkill(MycroftSkill):
     # actually speak the text it's passed--instead, that text is the filename
     # of a file in the dialog folder, and Mycroft speaks its contents when
     # the method is called.
-    def handle_thank_you_intent(self, message):
+    def handle_thank_you_intent(self, message): 
         self.speak_dialog("welcome")
 
     def handle_how_are_you_intent(self, message):
