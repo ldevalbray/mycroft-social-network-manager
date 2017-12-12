@@ -39,7 +39,6 @@ __author__ = 'ldevalbray'
 
 logger = getLogger(abspath(__file__).split('/')[-2])
 
-
 class SocialMediaSkill(MycroftSkill):
 
     def __init__(self):

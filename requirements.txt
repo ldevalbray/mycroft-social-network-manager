@@ -1,3 +1,4 @@
 facebook-sdk
 python-twitter
 requests
+oauth2
