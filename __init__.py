@@ -23,18 +23,21 @@
 
 # Import statements: the list of outside modules you'll be using in your
 # skills, whether from other files in mycroft-core or from external libraries
-from os.path import dirname
+
+import sys
+from os.path import dirname, abspath, basename
 
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
-from fb import Facebook
-from tw import Twitter
+
+sys.path.append(abspath(dirname(__file__)))
+Facebook = __import__('fb').Facebook
+Twitter = __import__('tw').Twitter
 
 __author__ = 'ldevalbray'
 
-
-LOGGER = getLogger(__name__)
+logger = getLogger(abspath(__file__).split('/')[-2])
 
 
 class SocialMediaSkill(MycroftSkill):
