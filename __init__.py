@@ -45,8 +45,8 @@ class SocialMediaSkill(MycroftSkill):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
         self.FB = 'facebook'
         self.TW = 'twitter'
-        self.fb = Facebook()
-        self.tw = Twitter()
+        # self.fb = Facebook()
+        # self.tw = Twitter()
 
     def initialize(self):
         self.load_data_files(dirname(__file__))
