@@ -32,8 +32,8 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
 
 sys.path.append(abspath(dirname(__file__)))
-Facebook = __import__('fb').Facebook
-Twitter = __import__('tw').Twitter
+# Facebook = __import__('fb').Facebook
+# Twitter = __import__('tw').Twitter
 
 __author__ = 'ldevalbray'
 
