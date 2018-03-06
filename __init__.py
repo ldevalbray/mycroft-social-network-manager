@@ -25,19 +25,21 @@
 # skills, whether from other files in mycroft-core or from external libraries
 
 import sys
-sys.path.append(abspath(dirname(__file__)))
 from os.path import dirname, abspath, basename
+
+sys.path.append(dirname(dirname(__file__)))
 
 import requests
 from Levenshtein import ratio
 import facebook
-import time
+import time 
 import twitter
 import oauth2 as oauth
 import urlparse
 
 from browser_service import BrowserControl
 
+from mycroft.skills.settings import SkillSettings
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
