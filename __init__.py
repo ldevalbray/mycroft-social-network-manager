@@ -25,15 +25,22 @@
 # skills, whether from other files in mycroft-core or from external libraries
 
 import sys
+sys.path.append(abspath(dirname(__file__)))
 from os.path import dirname, abspath, basename
+
+import requests
+from Levenshtein import ratio
+import facebook
+import time
+import twitter
+import oauth2 as oauth
+import urlparse
+
+from browser_service import BrowserControl
 
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
-
-sys.path.append(abspath(dirname(__file__)))
-# Facebook = __import__('fb').Facebook
-# Twitter = __import__('tw').Twitter
 
 __author__ = 'ldevalbray'
 
@@ -45,8 +52,8 @@ class SocialMediaSkill(MycroftSkill):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
         self.FB = 'facebook'
         self.TW = 'twitter'
-        # self.fb = Facebook()
-        # self.tw = Twitter()
+        self.fb = Facebook()
+        self.tw = Twitter()
 
     def initialize(self):
         self.load_data_files(dirname(__file__))
@@ -92,6 +99,451 @@ class SocialMediaSkill(MycroftSkill):
 
     def stop(self):
         pass
+
+class Facebook():
+
+    def __init__(self, settings):
+
+        self.settings = settings
+        self.api = None
+        self.fbFriends = None
+        self.appAccessToken = '185643198851873|6248814e48fd63d0353866ee3de9264f'
+        self.URL = 'https://graph.facebook.com/v2.12/'
+        self.driver = Auth()
+        self.initApi() 
+        # picId = self.getProfilePicId("me")
+        # self.likePhoto(picId)
+        # print self.getLikes("10215117266189517")
+        # self.commentPhoto(picId, "test")
+        # self.commentPost( "10215117266189517", "Top !")
+        # self.post("test", "me", "Audren de Valbray")
+
+    
+    def initApi(self):
+        # if self.login():
+        #     self.api = facebook.GraphAPI(access_token=self.settings["fbUserAccessToken"])
+        #     self.setUserInfo()
+        self.login()
+
+    def login(self,expired = False):
+        # if ((self.settings["fbUserAccessToken"] is None) or expired ):
+        #     DATA = {'access_token': self.appAccessToken, 'scope':'public_profile, publish_actions, user_friends, publish_actions, user_posts'}
+        #     loginRequest = requests.post(url = self.URL + 'device/login', data = DATA)
+        #     data = loginRequest.json()
+
+        #     print "-------- LOGGING IN FB -------"
+        #     code = data['code']
+        #     userCode = data['user_code']
+        #     verificationURI = data['verification_uri']
+        #     interval = data['interval']
+
+        #     DATA2 = {'access_token':self.appAccessToken, 'code':code}
+
+        #     awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
+        #     awaitingUserLoginRes = awaitingUserLoginRequest.json()
+
+        #     self.driver.loginFb(verificationURI, userCode)
+        
+        #     while 'access_token' not in awaitingUserLoginRes.keys() :
+        #         #print "-------- AWAITING USER RES STATUS ----/" 
+        #         time.sleep(7)
+        #         awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
+        #         awaitingUserLoginRes = awaitingUserLoginRequest.json()
+        #         print 'Authentification ... ', verificationURI
+
+        #     if 'access_token' in awaitingUserLoginRes.keys():
+        #         self.settings["fbUserAccessToken"] = awaitingUserLoginRes['access_token']
+        #         self.settings["fbUserAccessTokenExpirationDate"] = awaitingUserLoginRes['expires_in']
+        #         print self.settings
+        #         return self.login()
+            
+        #     else:
+        #         print "-------- LOG IN FAILED -------"
+        #         return False
+
+        # else:
+        self.driver.signInFb("https://www.facebook.com/login")
+        print "-------- LOGGED IN FB --------"
+        return True
+    
+    # def post(self, message, to="me", tag="none"):
+    #     if(to != "me"):
+    #         userId = self.getFriendId(to)
+    #         driver = self.driver.getFbDriver()
+    #         driver.get("https://www.facebook.com/"+userId)
+    #         element = driver.find_elements_by_class_name("navigationFocus")[1]
+    #         webdriver.ActionChains(driver).move_to_element(element).click(element).perform()
+    #         inputElement = element.find_element_by_class_name("_1mj")
+    #         webdriver.ActionChains(driver).move_to_element(inputElement).click(inputElement).send_keys(message).perform()
+    #         postBtn = driver.find_element_by_class_name("_2dck").find_element_by_xpath("//button[@data-testid='react-composer-post-button']")
+    #         webdriver.ActionChains(driver).move_to_element(postBtn).click(postBtn).perform()
+    #         print "Posted on wall", userId
+
+    #     else:
+    #         if tag != "none":
+    #             tagId = self.getFriends()[findMatchingString(tag, self.getFriends().keys())]["taggableID"]
+            
+    #         post = self.api.put_object(parent_object=to, connection_name='feed',
+    #                 message=message, tags=[tagId])
+
+    # def like(self, url):
+    #     driver = self.driver.getFbDriver()
+    #     driver.get(url)
+    #     likeBtn = driver.execute_script("return document.querySelector('div.rhc.photoUfiContainer').querySelector('span._1mto').querySelector('a')")
+    #     if(likeBtn.get_attribute("aria-pressed") == "false"):
+    #         driver.execute_script("document.querySelector('div._57w').querySelector('span._1mto').querySelector('a').click()")
+    #     else:
+    #         print "Already Liked"
+
+    # def likePhoto(self, photoId):
+    #    self.like("https://www.facebook.com/photo.php?fbid="+photoId)
+
+    # def likePost(self, postId, userId="me"):
+    #     if(userId == "me"):
+    #         userId= self.userInfo["id"]
+    #     self.like("https://www.facebook.com/"+userId+"/posts/"+postId)
+    
+    # def comment(self, url, comment):
+    #     driver = self.driver.getFbDriver()
+    #     driver.get(url)
+    #     time.sleep(1)
+    #     commentInputsNumber = len(driver.find_elements_by_class_name("UFIAddCommentInput")) - 1
+    #     time.sleep(3)
+    #     print commentInputsNumber
+    #     commentInput = driver.find_elements_by_class_name("UFIAddCommentInput")[commentInputsNumber]
+    #     print commentInput
+    #     webdriver.ActionChains(driver).move_to_element(commentInput).click().click().perform()
+    #     # webdriver.ActionChains(driver).move_to_element(commentInput).click().send_keys(comment).perform()
+    #     # .send_keys(comment).send_keys(Keys.RETURN).perform()
+    #     # webdriver.ActionChains(driver)
+
+    # def commentPhoto(self, photoId, comment):
+    #     self.comment("https://www.facebook.com/photo.php?fbid="+photoId, comment)
+    
+    # def commentPost(self, postId, comment, userId="me"):
+    #     if(userId == "me"):
+    #         userId= self.userInfo["id"]
+    #     self.comment("https://www.facebook.com/"+userId+"/posts/"+postId, comment)
+    
+    # def getFriends(self):
+    #     if(self.fbFriends is None):
+    #         return getAllData(self.api.get_object("me/taggable_friends"), "toReturn[d[\"name\"]] = {\"picture_url\":d[\"picture\"][\"data\"][\"url\"], \"taggableID\":d[\"id\"]}")
+    #     else:
+    #         return self.fbFriends
+
+    # def getNumberOfFriends(self):
+    #     return self.api.get_connections(id='me', connection_name='friends')['summary']['total_count']
+
+    # def getComments(self, postId, userId='me'):
+    #     if(userId=='me'):
+    #         userId = self.userInfo["id"]
+    #     return getAllData(self.api.get_connections(id=userId+"_"+postId, connection_name='comments'), "toReturn[d[\"from\"]] = d[\"message\"]") 
+
+    # def getLikes(self, postId, userId='me'):
+    #     if(userId=='me'):
+    #         userId = self.userInfo["id"]
+    #     return getAllData(self.api.get_connections(id=userId+"_"+postId, connection_name='likes'), "toReturn[d[\"name\"]] = d[\"id\"]") 
+
+    # def setUserInfo(self):
+    #     PARAMS = {'access_token':self.settings["fbUserAccessToken"], 'fields':'name, id'}
+    #     userInfoRequest = requests.get(url = self.URL+'me', params = PARAMS)
+    #     self.userInfo = userInfoRequest.json()
+
+    # def search(self, query, typeToSearchFor="user"):
+    #    return getAllData(self.api.search(type=typeToSearchFor,q=query), "toReturn[d[\"name\"]] = d[\"id\"]") 
+
+    # def getProfilePicId(self, friendId):
+    #     picSrc = None
+    #     if friendId == "me":
+    #         friendId = self.userInfo['id']
+    #     if is_number(friendId):
+    #         r = requests.get("https://graph.facebook.com/"+friendId+"/picture")
+    #         picSrc = r.url
+    #     else:
+    #         friends = self.getFriends()
+    #         foundFriend = findMatchingString(friendId, friends.keys())
+    #         picSrc = friends[foundFriend]["picture_url"]
+
+    #     findString = "\d_(.*)_\d"
+    #     return re.search(findString, picSrc).group(1)
+    
+    # def getFriendId(self, query, typeToSearchFor="people"):
+    #     userId=None
+    #     fbFriends = self.getFriends()
+    #     foundFriend = findMatchingString(query, fbFriends.keys())
+    #     driver = self.driver.getFbDriver()
+    #     driver.get("https://www.facebook.com/search/"+typeToSearchFor+"/?q="+foundFriend)
+    #     resultsContainer = driver.find_element_by_id("BrowseResultsContainer")
+    #     results = resultsContainer.find_elements_by_class_name("_4p2o")
+    #     for element in results:
+    #         findString = "x\d*\/(.*).jpg"
+    #         firstImg = re.search(findString, element.find_element_by_class_name("_1glk").get_attribute("src")).group(1)
+    #         scdImg = re.search(findString, fbFriends[foundFriend]).group(1)
+    #         if firstImg == scdImg:
+    #             data = element.find_element_by_class_name("_3u1").get_attribute("data-bt")
+    #             userId = re.search("id\":(\d*),", data).group(1)
+
+    #     return userId
+
+class Twitter():
+    
+    def __init__(self, settings):
+
+        self.settings = settings
+        self.api = None
+        self.consumerKey = 'suWlKq5ptOfGP7U2e6QEYcgT0'
+        self.consumerSecret = 'e7mvduA4qn1TtkbiWNX30QBDBLg0XcUUjYflrfI77OjK6bf7XE'
+        # self.initApi()
+        # self.twFriends = None
+        # print self.getFriendStatus("Ingrid de Valbray")
+        # print self.retweet("Ingrid de Valbray")
+       
+
+    # def initApi(self):
+    #     if self.login():
+    #         self.api = twitter.Api(consumer_key=self.consumerKey,
+    #                 consumer_secret=self.consumerSecret,
+    #                 access_token_key=self.settings["twUserAccessToken"],
+    #                 access_token_secret=self.settings["twUserAccessTokenSecret"])
+
+    # def login(self, expired = False):
+    #     if ((self.settings["twUserAccessToken"] is None) or expired):
+    #         print "-------- LOGGING IN TW -------"
+    #         consumer_key = self.consumerKey
+    #         consumer_secret = self.consumerSecret
+
+    #         request_token_url = 'https://api.twitter.com/oauth/request_token'
+    #         access_token_url = 'https://api.twitter.com/oauth/access_token'
+    #         authorize_url = 'https://api.twitter.com/oauth/authorize'
+
+    #         consumer = oauth.Consumer(consumer_key, consumer_secret)
+    #         client = oauth.Client(consumer)
+                
+    #         resp, content = client.request(request_token_url, "GET")
+    #         if resp['status'] != '200':
+    #             raise Exception("Invalid response %s." % resp['status'])
+
+    #         request_token = dict(urlparse.parse_qsl(content))
+
+    #         # print "Request Token:"
+    #         # print "    - oauth_token        = %s" % request_token['oauth_token']
+    #         # print "    - oauth_token_secret = %s" % request_token['oauth_token_secret']
+    #         # print 
+
+    #         authUrl = "%s?oauth_token=%s" % (authorize_url, request_token['oauth_token'])
+
+    #         oauth_verifier = Auth().loginTw(authUrl)
+
+    #         token = oauth.Token(request_token['oauth_token'],
+    #             request_token['oauth_token_secret'])
+    #         token.set_verifier(oauth_verifier)
+    #         client = oauth.Client(consumer, token)
+
+    #         resp, content = client.request(access_token_url, "POST")
+    #         access_token = dict(urlparse.parse_qsl(content))
+
+    #         # print "Access Token:"
+    #         # print "    - oauth_token        = %s" % access_token['oauth_token']
+    #         # print "    - oauth_token_secret = %s" % access_token['oauth_token_secret']
+    #         # print
+    #         # print "You may now access protected resources using the access tokens above." 
+    #         # print
+
+    #         if access_token is not None:
+    #             self.settings["twUserAccessToken"] = access_token['oauth_token']
+    #             self.settings["twUserAccessTokenSecret"] = access_token['oauth_token_secret']
+    #             return self.login()
+    #         else:
+    #             return False
+
+    #     else:
+    #         print ("----- LOGGED IN TW ------")
+    #         return True
+
+    # def post(self, message, to="me"):
+    #     if(to=="me"):
+    #         return self.api.PostUpdate(message)
+        
+    #     else:
+    #         friendFound = findMatchingString(to, self.getFriends().keys())
+    #         return self.api.PostUpdate("@"+self.getFriends()[friendFound]["username"]+" "+message)
+        
+    # def getFriendStatus(self, friend):
+    #     friendFound = findMatchingString(friend, self.getFriends().keys())
+    #     return self.getFriends()[friendFound]["status"]["text"]
+
+    # def retweet(self, friend):
+    #     friendFound = findMatchingString(friend, self.getFriends().keys())
+    #     return self.api.PostRetweet(self.getFriends()[friendFound]["status"]["id"])
+
+    # def message(self, message, friend):
+    #     friendFound = findMatchingString(friend, self.getFriends().keys())
+    #     friendObject=self.getFriends()[friendFound]
+    #     return self.api.PostDirectMessage(message, user_id=friendObject["status"]["id"], screen_name=friendObject["username"])
+
+
+    # def getFriends(self):
+    #     if(self.twFriends is None):
+    #         toReturn = {}
+    #         users = self.api.GetFriends()
+    #         for u in users:
+    #             toReturn[u.name]={"username":u.screen_name, "id":u.id, "status":{"text":u.status.text, "id":u.status.id}}
+    #         return toReturn
+    #     else:
+    #         return self.twFriends
+
+class Auth:
+
+    def __init__(self):
+        self.chrome_options = Options()  
+        self.chrome_options.add_argument("--disable-notifications")
+        # chrome_options.add_argument("--headless")  
+
+        self.fbDriver = None
+        self.twDriver = None
+
+        # self.driver = webdriver.PhantomJS()
+        # self.driver.save_screenshot('screen.png')
+
+        self.fbCredentials = {"email": "l.devalbray@gmail.com", "pw":"azerty050197ytreza"} 
+        # self.fbCredentials = {"email": "wworqpucgw_1516816755@tfbnw.net", "pw":"mdptest"} 
+        self.twCredentials = {"email": "l.devalbray@gmail.com", "pw":"Briott49", "phoneNumber":"+33613396586"}
+        
+    def signInFb(self, url):
+        if(self.fbDriver is None):
+            # self.fbDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
+            self.fbDriver = BrowserControl(self.emitter)
+        self.fbDriver.implicitly_wait(2)
+        self.fbDriver.open_url(url)
+        if(check_exists_by_name("login", self.fbDriver)):
+            self.fbDriver.get_element(data="email", name="email", type="name")
+            self.fbDriver.send_keys_to_element(text=self.fbCredentials["email"], name="email", special=False)
+            self.fbDriver.get_element(data="pass", name="pass", type="name")
+            self.fbDriver.send_keys_to_element(text=self.fbCredentials["pw"], name="pass", special=False)
+            self.fbDriver.get_element(data="login", name="login", type="name")
+            self.fbDriver.click_element("login")
+           
+
+    # def signInTw(self, url):
+    #     if(self.twDriver is None):
+    #         # self.twDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
+    #         self.twDriver = BrowserControl(self.emitter)
+    #     self.twDriver.implicitly_wait(2)
+    #     self.twDriver.open_url(url)
+    #     if(check_exists_by_name("session[password]", self.twDriver)):
+    #         emailInput = self.twDriver.find_element_by_name("session[username_or_email]")
+    #         pwInput = self.twDriver.find_element_by_name("session[password]")
+    #         emailInput.send_keys(self.twCredentials["email"])
+    #         pwInput.send_keys(self.twCredentials["pw"])
+    #         pwInput.send_keys(Keys.RETURN)
+
+    # def loginFb(self, url, userCode):
+    #     self.signInFb(url)
+
+    #     userCodeElement = self.fbDriver.find_element_by_name("user_code")
+    #     userCodeElement.send_keys(userCode)
+    #     userCodeElement.send_keys(Keys.RETURN)
+
+    #     if(check_exists_by_name("__CONFIRM__", self.fbDriver)):
+    #         print "--- First Confirmation"
+    #         self.fbDriver.find_element_by_name("__CONFIRM__").click()
+    #         if(check_exists_by_name("__CONFIRM__", self.fbDriver)):
+    #             print "--- Second Confirmation"
+    #             self.fbDriver.find_element_by_name("__CONFIRM__").click()
+
+
+    #     # self.driver.close()
+
+    # def loginTw(self, url):
+    #     self.signInTw(url)
+
+    #     userCode = ""
+
+    #     if(check_exists_by_name("challenge_response", self.twDriver)):
+    #         phoneInput = self.twDriver.find_element_by_name("challenge_response")
+    #         phoneInput.send_keys(self.twCredentials["phoneNumber"])
+    #         phoneInput.send_keys(Keys.RETURN)
+    #         if(check_exists_by_id("allow", self.twDriver)):
+    #             self.find_element_by_id("allow").click()
+
+
+    #     if(check_exists_by_xpath("//kbd[@aria-labelledby='code-desc']", self.twDriver)):
+    #         userCodeElement = self.twDriver.find_element_by_xpath("//kbd[@aria-labelledby='code-desc']")
+    #         userCode = userCodeElement.text
+        
+    #     # self.driver.close()
+    #     print userCode
+    #     return userCode
+
+    def getFbDriver(self):
+        if(self.fbDriver is None):
+            self.fbDriver = BrowserControl(self.emitter)
+            # self.fbDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
+
+        return self.fbDriver
+
+    def getTwDriver(self):
+        if(self.twDriver is None):
+            self.twDriver = BrowserControl(self.emitter)
+            # self.twDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
+        return self.twDriver
+
+def dist(name1, name2):
+    if isinstance(name1, str):
+        name1 = unicode(name1, "utf-8")
+    if isinstance(name2, str):
+        name2 = unicode(name2, "utf-8")
+    return ratio(name1, name2)
+
+def findMatchingString(name, listOfNames):
+    closest = 0
+    closestName = None
+    for s in listOfNames:
+        distance = dist(name, s)
+        if( distance > closest):
+            closest = distance
+            closestName = s
+
+    return closestName
+
+def check_exists_by_xpath(xpath, driver):
+    # try:
+    #     driver.get_element(data=xpath, name="xpath", type="xpath")
+    # except NoSuchElementException:
+    #     return False
+    return True
+
+def check_exists_by_name(name, driver):
+    # try:
+    #     driver.get_element(data=name, name="name", type="name")
+    # except NoSuchElementException:
+    #     return False
+    return True
+
+def check_exists_by_id(id, driver):
+    # try:
+    #     driver.get_element(data=id, name="id", type="id")
+    # except NoSuchElementException:
+    #     return False
+    return True
+
+def is_number(n):
+    try:
+        float(n)
+    except ValueError:
+        return False
+    return True
+
+def getAllData(data, code):
+    toReturn = {}
+    for d in data["data"]:
+        exec(code)
+    while("next" in data["paging"]):
+        data = requests.get(data["paging"]["next"]).json()
+        for d in data["data"]:
+            exec(code)
+    
+    return toReturn
 
 
 def create_skill():
