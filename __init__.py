@@ -104,9 +104,9 @@ class SocialMediaSkill(MycroftSkill):
 
 class Facebook():
 
-    def __init__(self, settings):
+    def __init__(self):
 
-        self.settings = settings
+        # self.settings = settings
         self.api = None
         self.fbFriends = None
         self.appAccessToken = '185643198851873|6248814e48fd63d0353866ee3de9264f'
