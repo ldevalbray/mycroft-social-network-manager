@@ -54,7 +54,8 @@ class SocialMediaSkill(MycroftSkill):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
 
         print("SELFSETTINGS", self.settings)
-        self.driver = BrowserControl(self.emitter)
+        emitter = self.emitter
+        self.driver = BrowserControl(emitter)
 
         setting = { "driver" : self.driver}
 
