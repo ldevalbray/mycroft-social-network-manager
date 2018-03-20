@@ -397,8 +397,8 @@ class Twitter():
 class Auth:
 
     def __init__(self):
-        self.chrome_options = Options()  
-        self.chrome_options.add_argument("--disable-notifications")
+        # self.chrome_options = Options()  
+        # self.chrome_options.add_argument("--disable-notifications")
         # chrome_options.add_argument("--headless")  
 
         self.fbDriver = None
