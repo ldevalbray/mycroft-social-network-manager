@@ -37,7 +37,7 @@ import twitter
 import oauth2 as oauth
 import urlparse
 
-from browser_service import BrowserControl
+from mycroft_jarbas_utils.browser import BrowserControl
 
 from mycroft.skills.settings import SkillSettings
 from adapt.intent import IntentBuilder

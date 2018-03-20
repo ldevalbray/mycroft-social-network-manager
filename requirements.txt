@@ -3,3 +3,4 @@ python-twitter
 requests
 oauth2
 python-levenshtein
+git+https://github.com/JarbasAl/mycroft_jarbas_utils
