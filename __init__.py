@@ -52,10 +52,17 @@ class SocialMediaSkill(MycroftSkill):
 
     def __init__(self):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
+
+        print("SELFSETTINGS", self.settings)
+        self.driver = BrowserControl(self.emitter)
+
+        setting = { "driver" : self.driver}
+
         self.FB = 'facebook'
         self.TW = 'twitter'
-        self.fb = Facebook()
+        self.fb = Facebook(setting)
         self.tw = Twitter()
+
 
     def initialize(self):
         self.load_data_files(dirname(__file__))
@@ -104,14 +111,14 @@ class SocialMediaSkill(MycroftSkill):
 
 class Facebook():
 
-    def __init__(self):
+    def __init__(self, settings):
 
         # self.settings = settings
         self.api = None
         self.fbFriends = None
         self.appAccessToken = '185643198851873|6248814e48fd63d0353866ee3de9264f'
         self.URL = 'https://graph.facebook.com/v2.12/'
-        self.driver = Auth()
+        self.auth = Auth(settings)
         self.initApi() 
         # picId = self.getProfilePicId("me")
         # self.likePhoto(picId)
@@ -164,7 +171,7 @@ class Facebook():
         #         return False
 
         # else:
-        self.driver.signInFb("https://www.facebook.com/login")
+        self.auth.signInFb("https://www.facebook.com/login")
         print "-------- LOGGED IN FB --------"
         return True
     
@@ -396,13 +403,14 @@ class Twitter():
 
 class Auth:
 
-    def __init__(self):
+    def __init__(self, settings):
         # self.chrome_options = Options()  
         # self.chrome_options.add_argument("--disable-notifications")
         # chrome_options.add_argument("--headless")  
 
         self.fbDriver = None
         self.twDriver = None
+        self.fbDriver = settings["driver"]
 
         # self.driver = webdriver.PhantomJS()
         # self.driver.save_screenshot('screen.png')
@@ -414,7 +422,6 @@ class Auth:
     def signInFb(self, url):
         if(self.fbDriver is None):
             # self.fbDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
-            self.fbDriver = BrowserControl(self.emitter)
         self.fbDriver.implicitly_wait(2)
         self.fbDriver.open_url(url)
         if(check_exists_by_name("login", self.fbDriver)):
@@ -476,19 +483,6 @@ class Auth:
     #     # self.driver.close()
     #     print userCode
     #     return userCode
-
-    def getFbDriver(self):
-        if(self.fbDriver is None):
-            self.fbDriver = BrowserControl(self.emitter)
-            # self.fbDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
-
-        return self.fbDriver
-
-    def getTwDriver(self):
-        if(self.twDriver is None):
-            self.twDriver = BrowserControl(self.emitter)
-            # self.twDriver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
-        return self.twDriver
 
 def dist(name1, name2):
     if isinstance(name1, str):
