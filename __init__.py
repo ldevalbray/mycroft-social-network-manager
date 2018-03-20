@@ -48,6 +48,7 @@ from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
 from mycroft.util.parse import extract_datetime
 from mycroft.util.format import nice_number
+from mycroft.skills.audioservice import AudioService
 
 import mycroft.audio
 
@@ -60,6 +61,9 @@ class SocialMediaSkill(MycroftSkill):
     def __init__(self):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
 
+    def initialize(self):
+        self.load_data_files(dirname(__file__))
+
         LOG.info("SELFSETTINGS", self.settings)
         print("SELFSETTINGS", self.settings)
         emitter = self.emitter
@@ -71,10 +75,6 @@ class SocialMediaSkill(MycroftSkill):
         self.TW = 'twitter'
         self.fb = Facebook(setting)
         self.tw = Twitter()
-
-
-    def initialize(self):
-        self.load_data_files(dirname(__file__))
 
         post_intent = IntentBuilder("PostIntent").\
             require("PostIntentKeyword").build()
