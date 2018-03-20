@@ -41,8 +41,15 @@ from mycroft_jarbas_utils.browser import BrowserControl
 
 from mycroft.skills.settings import SkillSettings
 from adapt.intent import IntentBuilder
-from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
+from mycroft.dialog import DialogLoader
+from mycroft.api import Api
+from mycroft.skills.core import MycroftSkill, intent_handler
+from mycroft.util.log import LOG
+from mycroft.util.parse import extract_datetime
+from mycroft.util.format import nice_number
+
+import mycroft.audio
 
 __author__ = 'ldevalbray'
 
@@ -53,6 +60,7 @@ class SocialMediaSkill(MycroftSkill):
     def __init__(self):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
 
+        LOG.info("SELFSETTINGS", self.settings)
         print("SELFSETTINGS", self.settings)
         emitter = self.emitter
         self.driver = BrowserControl(emitter)
