@@ -429,7 +429,6 @@ class Auth:
         self.twCredentials = {"email": "l.devalbray@gmail.com", "pw":"Briott49", "phoneNumber":"+33613396586"}
         
     def signInFb(self, url):
-        self.fbDriver.implicitly_wait(2)
         self.fbDriver.open_url(url)
         if(check_exists_by_name("login", self.fbDriver)):
             self.fbDriver.get_element(data="email", name="email", type="name")
