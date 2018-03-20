@@ -65,16 +65,14 @@ class SocialMediaSkill(MycroftSkill):
         self.load_data_files(dirname(__file__))
 
         LOG.info("SELFSETTINGS", self.settings)
-        print("SELFSETTINGS", self.settings)
+        
         emitter = self.emitter
         self.driver = BrowserControl(emitter)
 
-        setting = { "driver" : self.driver}
-
         self.FB = 'facebook'
         self.TW = 'twitter'
-        self.fb = Facebook(setting)
-        self.tw = Twitter()
+        self.fb = Facebook(self.settings, self.driver)
+        self.tw = Twitter(self.settings, self.driver)
 
         post_intent = IntentBuilder("PostIntent").\
             require("PostIntentKeyword").build()
@@ -120,14 +118,15 @@ class SocialMediaSkill(MycroftSkill):
 
 class Facebook():
 
-    def __init__(self, settings):
+    def __init__(self, settings, driver):
 
         # self.settings = settings
         self.api = None
         self.fbFriends = None
         self.appAccessToken = '185643198851873|6248814e48fd63d0353866ee3de9264f'
         self.URL = 'https://graph.facebook.com/v2.12/'
-        self.auth = Auth(settings)
+        self.settings = settings
+        self.auth = Auth(settings, driver)
         self.initApi() 
         # picId = self.getProfilePicId("me")
         # self.likePhoto(picId)
@@ -305,7 +304,7 @@ class Facebook():
 
 class Twitter():
     
-    def __init__(self, settings):
+    def __init__(self, settings, driver):
 
         self.settings = settings
         self.api = None
@@ -412,14 +411,15 @@ class Twitter():
 
 class Auth:
 
-    def __init__(self, settings):
+    def __init__(self, settings, driver):
         # self.chrome_options = Options()  
         # self.chrome_options.add_argument("--disable-notifications")
         # chrome_options.add_argument("--headless")  
 
         self.fbDriver = None
         self.twDriver = None
-        self.fbDriver = settings["driver"]
+        self.settings = settings
+        self.fbDriver = driver
 
         # self.driver = webdriver.PhantomJS()
         # self.driver.save_screenshot('screen.png')
