@@ -6,13 +6,13 @@
                 "name": "LoginFB",
                 "fields": [
                     {
-                        "name": "email",
+                        "name": "Facebook Email",
                         "type": "email",
                         "label": "Email",
                         "value": ""
                     },
                     {
-                        "name": "password",
+                        "name": "Facebook Password",
                         "type": "password",
                         "label": "Password",
                         "value": ""
@@ -23,13 +23,13 @@
                 "name": "LoginTW",
                 "fields": [
                     {
-                        "name": "email",
+                        "name": "Twitter Email" ,
                         "type": "email",
                         "label": "Email",
                         "value": ""
                     },
                     {
-                        "name": "password",
+                        "name": "Twitter Password",
                         "type": "password",
                         "label": "Password",
                         "value": ""
