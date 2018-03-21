@@ -60,12 +60,13 @@ class SocialMediaSkill(MycroftSkill):
 
     def __init__(self):
         super(SocialMediaSkill, self).__init__(name="SocialMediaSkill")
-
+        LOG.info("TEST 2222222222222222222222", self.settings)
+        
     def initialize(self):
+
         self.load_data_files(dirname(__file__))
 
-        LOG.info("SELFSETTINGS", self.settings)
-        
+
         emitter = self.emitter
         self.driver = BrowserControl(emitter)
 

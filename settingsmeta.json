@@ -1,0 +1,41 @@
+{
+    "name": "SocialMediaSkill",
+    "skillMetadata": {
+        "sections": [
+            {
+                "name": "LoginFB",
+                "fields": [
+                    {
+                        "name": "email",
+                        "type": "email",
+                        "label": "Email",
+                        "value": ""
+                    },
+                    {
+                        "name": "password",
+                        "type": "password",
+                        "label": "Password",
+                        "value": ""
+                    }
+                ]
+            },
+            {
+                "name": "LoginTW",
+                "fields": [
+                    {
+                        "name": "email",
+                        "type": "email",
+                        "label": "Email",
+                        "value": ""
+                    },
+                    {
+                        "name": "password",
+                        "type": "password",
+                        "label": "Password",
+                        "value": ""
+                    }
+                ]
+            }
+        ]
+    }
+}
