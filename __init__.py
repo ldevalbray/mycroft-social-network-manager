@@ -73,14 +73,15 @@ class SocialMediaSkill(MycroftSkill):
 
         self.load_data_files(dirname(__file__))
 
+        print(self.settings["FacebookEmail"])
 
-        emitter = self.emitter
-        self.driver = BrowserControl(emitter)
+        self.settings["twUserAccessToken"] = None
+        self.settings["twUserAccessTokenSecret"] = None 
 
         self.FB = 'facebook'
         self.TW = 'twitter'
-        self.fb = Facebook(self.settings, self.driver)
-        self.tw = Twitter(self.settings, self.driver)
+        self.fb = Facebook(self.settings)
+        self.tw = Twitter(self.settings)
 
         post_intent = IntentBuilder("PostIntent").\
             require("PostIntentKeyword").build()
@@ -350,7 +351,7 @@ class Twitter():
 
             authUrl = "%s?oauth_token=%s" % (authorize_url, request_token['oauth_token'])
 
-            oauth_verifier = Auth().loginTw(authUrl)
+            oauth_verifier = Auth(self.settings).loginTw(authUrl)
 
             token = oauth.Token(request_token['oauth_token'],
                 request_token['oauth_token_secret'])
@@ -412,7 +413,7 @@ class Twitter():
 
 class Auth:
 
-    def __init__(self):
+    def __init__(self, settings):
         self.chrome_options = Options()  
         self.chrome_options.add_argument("--disable-notifications")
         # chrome_options.add_argument("--headless")  
@@ -420,12 +421,10 @@ class Auth:
         self.fbDriver = None
         self.twDriver = None
 
+        self.settings = settings
+
         # self.driver = webdriver.PhantomJS()
         # self.driver.save_screenshot('screen.png')
-
-        self.fbCredentials = {"email": "l.devalbray@gmail.com", "pw":"azerty050197ytreza"} 
-        # self.fbCredentials = {"email": "wworqpucgw_1516816755@tfbnw.net", "pw":"mdptest"} 
-        self.twCredentials = {"email": "l.devalbray@gmail.com", "pw":"Briott49", "phoneNumber":"+33613396586"}
         
     def signInFb(self, url):
         if(self.fbDriver is None):
@@ -436,8 +435,8 @@ class Auth:
             emailInput = self.fbDriver.find_element_by_name("email")
             pwInput = self.fbDriver.find_element_by_name("pass")
             loginBtn = self.fbDriver.find_element_by_name("login")
-            emailInput.send_keys(self.fbCredentials["email"])
-            pwInput.send_keys(self.fbCredentials["pw"])
+            emailInput.send_keys(self.settings["FacebookEmail"])
+            pwInput.send_keys(self.settings["FacebookPassword"])
             loginBtn.click()
 
     def signInTw(self, url):
@@ -448,8 +447,8 @@ class Auth:
         if(check_exists_by_name("session[password]", self.twDriver)):
             emailInput = self.twDriver.find_element_by_name("session[username_or_email]")
             pwInput = self.twDriver.find_element_by_name("session[password]")
-            emailInput.send_keys(self.twCredentials["email"])
-            pwInput.send_keys(self.twCredentials["pw"])
+            emailInput.send_keys(self.settings["TwitterEmail"])
+            pwInput.send_keys(self.settings["TwitterPassword"])
             pwInput.send_keys(Keys.RETURN)
 
     def loginFb(self, url, userCode):
