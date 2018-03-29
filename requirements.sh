@@ -1,1 +1,1 @@
-msm install https://github.com/JarbasAl/browser_service
+./msm install https://github.com/JarbasAl/browser_service
