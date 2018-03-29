@@ -70,19 +70,20 @@ class SocialMediaSkill(MycroftSkill):
         emitter = self.emitter
         self.driver = BrowserControl(emitter)
 
-        print(self.settings["FacebookEmail"])
-
-        if "twUserAccessToken" is not in self.settings:
+        if "twUserAccessToken" not in self.settings:
             self.settings["twUserAccessToken"] = None
-        if "twUserAccessTokenSecret" is not in self.settings:
+        if "twUserAccessTokenSecret" not in self.settings:
             self.settings["twUserAccessTokenSecret"] = None 
+        
+        if "fbUserAccessToken" not in self.settings:
+            self.settings["fbUserAccessToken"] = None
+        if "fbUserAccessTokenExpirationDate" not in self.settings:
+            self.settings["fbUserAccessTokenExpirationDate"] = None 
 
         self.FB = 'facebook'
         self.TW = 'twitter'
-        # self.fb = Facebook(self.settings, self.driver)
+        self.fb = Facebook(self.settings, self.driver)
         self.tw = Twitter(self.settings, self.driver)
-
-        LOG.info("TEST 2222222222222222222222", self.settings)
 
         post_intent = IntentBuilder("PostIntent").\
             require("PostIntentKeyword").build()
@@ -120,7 +121,7 @@ class SocialMediaSkill(MycroftSkill):
         #     self.tw.post(message)
         # else:
         #     self.fb.post(message)
-        #     self.tw.post(message)
+        # self.tw.post(u"test")
         self.speak_dialog("post")
 
     def stop(self):
@@ -130,12 +131,13 @@ class Facebook():
 
     def __init__(self, settings, driver):
 
-        # self.settings = settings
+        
         self.api = None
         self.fbFriends = None
         self.appAccessToken = '185643198851873|6248814e48fd63d0353866ee3de9264f'
         self.URL = 'https://graph.facebook.com/v2.12/'
         self.settings = settings
+        self.driver = driver
         self.auth = Auth(settings, driver)
         self.initApi() 
         # picId = self.getProfilePicId("me")
@@ -147,49 +149,49 @@ class Facebook():
 
     
     def initApi(self):
-        # if self.login():
-        #     self.api = facebook.GraphAPI(access_token=self.settings["fbUserAccessToken"])
-        #     self.setUserInfo()
-        self.login()
+        if self.login():
+            self.api = facebook.GraphAPI(access_token=self.settings["fbUserAccessToken"])
+            self.setUserInfo()
+            print self.userInfo
 
     def login(self,expired = False):
-        # if ((self.settings["fbUserAccessToken"] is None) or expired ):
-        #     DATA = {'access_token': self.appAccessToken, 'scope':'public_profile, publish_actions, user_friends, publish_actions, user_posts'}
-        #     loginRequest = requests.post(url = self.URL + 'device/login', data = DATA)
-        #     data = loginRequest.json()
+        if ((self.settings["fbUserAccessToken"] is None) or expired ):
+            DATA = {'access_token': self.appAccessToken, 'scope':'public_profile, publish_actions, user_friends, publish_actions, user_posts'}
+            loginRequest = requests.post(url = self.URL + 'device/login', data = DATA)
+            data = loginRequest.json()
 
-        #     print "-------- LOGGING IN FB -------"
-        #     code = data['code']
-        #     userCode = data['user_code']
-        #     verificationURI = data['verification_uri']
-        #     interval = data['interval']
+            print "-------- LOGGING IN FB -------"
+            code = data['code']
+            userCode = data['user_code']
+            verificationURI = data['verification_uri']
+            interval = data['interval']
 
-        #     DATA2 = {'access_token':self.appAccessToken, 'code':code}
+            DATA2 = {'access_token':self.appAccessToken, 'code':code}
 
-        #     awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
-        #     awaitingUserLoginRes = awaitingUserLoginRequest.json()
+            awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
+            awaitingUserLoginRes = awaitingUserLoginRequest.json()
 
-        #     self.driver.loginFb(verificationURI, userCode)
+            self.auth.loginFb(verificationURI, userCode)
         
-        #     while 'access_token' not in awaitingUserLoginRes.keys() :
-        #         #print "-------- AWAITING USER RES STATUS ----/" 
-        #         time.sleep(7)
-        #         awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
-        #         awaitingUserLoginRes = awaitingUserLoginRequest.json()
-        #         print 'Authentification ... ', verificationURI
+            while 'access_token' not in awaitingUserLoginRes.keys() :
+                #print "-------- AWAITING USER RES STATUS ----/" 
+                time.sleep(7)
+                awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
+                awaitingUserLoginRes = awaitingUserLoginRequest.json()
+                print 'Authentification ... ', verificationURI
 
-        #     if 'access_token' in awaitingUserLoginRes.keys():
-        #         self.settings["fbUserAccessToken"] = awaitingUserLoginRes['access_token']
-        #         self.settings["fbUserAccessTokenExpirationDate"] = awaitingUserLoginRes['expires_in']
-        #         print self.settings
-        #         return self.login()
+            if 'access_token' in awaitingUserLoginRes.keys():
+                self.settings["fbUserAccessToken"] = awaitingUserLoginRes['access_token']
+                self.settings["fbUserAccessTokenExpirationDate"] = awaitingUserLoginRes['expires_in']
+                print self.settings
+                return self.login()
             
-        #     else:
-        #         print "-------- LOG IN FAILED -------"
-        #         return False
+            else:
+                print "-------- LOG IN FAILED -------"
+                return False
 
         # else:
-        self.auth.signInFb("https://www.facebook.com/login")
+        print self.auth.signInFb("https://www.facebook.com/login")
         print "-------- LOGGED IN FB --------"
         return True
     
@@ -271,10 +273,10 @@ class Facebook():
     #         userId = self.userInfo["id"]
     #     return getAllData(self.api.get_connections(id=userId+"_"+postId, connection_name='likes'), "toReturn[d[\"name\"]] = d[\"id\"]") 
 
-    # def setUserInfo(self):
-    #     PARAMS = {'access_token':self.settings["fbUserAccessToken"], 'fields':'name, id'}
-    #     userInfoRequest = requests.get(url = self.URL+'me', params = PARAMS)
-    #     self.userInfo = userInfoRequest.json()
+    def setUserInfo(self):
+        PARAMS = {'access_token':self.settings["fbUserAccessToken"], 'fields':'name, id'}
+        userInfoRequest = requests.get(url = self.URL+'me', params = PARAMS)
+        self.userInfo = userInfoRequest.json()
 
     # def search(self, query, typeToSearchFor="user"):
     #    return getAllData(self.api.search(type=typeToSearchFor,q=query), "toReturn[d[\"name\"]] = d[\"id\"]") 
@@ -317,10 +319,11 @@ class Twitter():
     def __init__(self, settings, driver):
 
         self.settings = settings
+        self.driver = driver
         self.api = None
         self.consumerKey = 'suWlKq5ptOfGP7U2e6QEYcgT0'
         self.consumerSecret = 'e7mvduA4qn1TtkbiWNX30QBDBLg0XcUUjYflrfI77OjK6bf7XE'
-        # self.initApi()
+        self.initApi()
         # self.twFriends = None
         # print self.getFriendStatus("Ingrid de Valbray")
         # print self.retweet("Ingrid de Valbray")
@@ -359,7 +362,7 @@ class Twitter():
 
             authUrl = "%s?oauth_token=%s" % (authorize_url, request_token['oauth_token'])
 
-            oauth_verifier = Auth().loginTw(authUrl)
+            oauth_verifier = Auth(self.settings, self.driver).loginTw(authUrl)
 
             token = oauth.Token(request_token['oauth_token'],
                 request_token['oauth_token_secret'])
@@ -387,37 +390,37 @@ class Twitter():
             print ("----- LOGGED IN TW ------")
             return True
 
-    # def post(self, message, to="me"):
-    #     if(to=="me"):
-    #         return self.api.PostUpdate(message)
+    def post(self, message, to="me"):
+        if(to=="me"):
+            return self.api.PostUpdate(message)
         
-    #     else:
-    #         friendFound = findMatchingString(to, self.getFriends().keys())
-    #         return self.api.PostUpdate("@"+self.getFriends()[friendFound]["username"]+" "+message)
+        else:
+            friendFound = findMatchingString(to, self.getFriends().keys())
+            return self.api.PostUpdate("@"+self.getFriends()[friendFound]["username"]+" "+message)
         
-    # def getFriendStatus(self, friend):
-    #     friendFound = findMatchingString(friend, self.getFriends().keys())
-    #     return self.getFriends()[friendFound]["status"]["text"]
+    def getFriendStatus(self, friend):
+        friendFound = findMatchingString(friend, self.getFriends().keys())
+        return self.getFriends()[friendFound]["status"]["text"]
 
-    # def retweet(self, friend):
-    #     friendFound = findMatchingString(friend, self.getFriends().keys())
-    #     return self.api.PostRetweet(self.getFriends()[friendFound]["status"]["id"])
+    def retweet(self, friend):
+        friendFound = findMatchingString(friend, self.getFriends().keys())
+        return self.api.PostRetweet(self.getFriends()[friendFound]["status"]["id"])
 
-    # def message(self, message, friend):
-    #     friendFound = findMatchingString(friend, self.getFriends().keys())
-    #     friendObject=self.getFriends()[friendFound]
-    #     return self.api.PostDirectMessage(message, user_id=friendObject["status"]["id"], screen_name=friendObject["username"])
+    def message(self, message, friend):
+        friendFound = findMatchingString(friend, self.getFriends().keys())
+        friendObject=self.getFriends()[friendFound]
+        return self.api.PostDirectMessage(message, user_id=friendObject["status"]["id"], screen_name=friendObject["username"])
 
 
-    # def getFriends(self):
-    #     if(self.twFriends is None):
-    #         toReturn = {}
-    #         users = self.api.GetFriends()
-    #         for u in users:
-    #             toReturn[u.name]={"username":u.screen_name, "id":u.id, "status":{"text":u.status.text, "id":u.status.id}}
-    #         return toReturn
-    #     else:
-    #         return self.twFriends
+    def getFriends(self):
+        if(self.twFriends is None):
+            toReturn = {}
+            users = self.api.GetFriends()
+            for u in users:
+                toReturn[u.name]={"username":u.screen_name, "id":u.id, "status":{"text":u.status.text, "id":u.status.id}}
+            return toReturn
+        else:
+            return self.twFriends
 
 class Auth:
 
@@ -438,43 +441,49 @@ class Auth:
         
     def signInFb(self, url):
         self.driver.open_url(url)
-        if(check_exists_by_name("login", self.driver)):
-            self.driver.get_element(data="email", name="email", type="name")
-            self.driver.send_keys_to_element(text=self.settings["FacebookEmail"], name="email", special=False)
-            self.driver.get_element(data="pass", name="pass", type="name")
-            self.driver.send_keys_to_element(text=self.settings["FacebookPassword"], name="pass", special=False)
-            self.driver.get_element(data="login", name="login", type="name")
-            self.driver.click_element("login")
+        # time.sleep(1)
+        # title = self.driver.get_current_url()
+        # print title
+        # if "login" in title:
+        self.driver.get_element(data="email", name="email", type="name")
+        self.driver.send_keys_to_element(text=self.settings["FacebookEmail"], name="email", special=False)
+        self.driver.get_element(data="pass", name="pass", type="name")
+        self.driver.send_keys_to_element(text=self.settings["FacebookPassword"], name="pass", special=False)
+        self.driver.get_element(data="login", name="login", type="name")
+        self.driver.click_element("login")
+        #     return self.signInFb(url)
+        # else:
+        #     return True
            
 
     def signInTw(self, url):
-        # if(self.driver is None):
-            # self.driver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),   chrome_options=self.chrome_options) 
-            # self.driver = BrowserControl(self.emitter)
         self.driver.open_url(url)
-        if(check_exists_by_name("session[password]", self.driver)):
-            self.driver.get_element(data="session[username_or_email]", name="emailInput", type="name")
-            self.driver.get_element(data="session[password]", name="pwInput", type="name")
-            emailInput = self.driver.find_element_by_name("session[username_or_email]")
-            pwInput = self.driver.find_element_by_name("session[password]")
-            self.driver.send_keys_to_element(text=self.settings["TwitterEmail"], name="emailInput", special=False)
-            self.driver.send_keys_to_element(text=self.settings["TwitterPassword"], name="pwInput", special=False)
-            self.driver.send_keys_to_element(text="RETURN", name="pwInput", special=True)
+        # time.sleep(1)
+        # title = self.driver.get_current_url()
+        # print title
+        # if "login" in title:
+        self.driver.get_element(data="session[username_or_email]", name="emailInput", type="name")
+        self.driver.get_element(data="session[password]", name="pwInput", type="name")
+        self.driver.send_keys_to_element(text=self.settings["TwitterEmail"], name="emailInput", special=False)
+        self.driver.send_keys_to_element(text=self.settings["TwitterPassword"], name="pwInput", special=False)
+        self.driver.send_keys_to_element(text="RETURN", name="pwInput", special=True)
+        #     return self.signInTw(url)
+        # else:
+        #     return True
 
-    # def loginFb(self, url, userCode):
-    #     self.signInFb(url)
+    def loginFb(self, url, userCode):
+        self.signInFb(url)
 
-    #     userCodeElement = self.driver.find_element_by_name("user_code")
-    #     userCodeElement.send_keys(userCode)
-    #     userCodeElement.send_keys(Keys.RETURN)
+        self.driver.get_element(data="user_code", name="userCodeElement", type="name")
+        self.driver.send_keys_to_element(text=userCode, name="userCodeElement", special=False)
+        self.driver.send_keys_to_element(text="RETURN", name="userCodeElement", special=True)
 
-    #     if(check_exists_by_name("__CONFIRM__", self.driver)):
-    #         print "--- First Confirmation"
-    #         self.driver.find_element_by_name("__CONFIRM__").click()
-    #         if(check_exists_by_name("__CONFIRM__", self.driver)):
-    #             print "--- Second Confirmation"
-    #             self.driver.find_element_by_name("__CONFIRM__").click()
-
+        print "--- First Confirmation"
+        self.driver.get_element(data="__CONFIRM__", name="firstConfirmation", type="name")
+        self.driver.click_element("firstConfirmation")
+        print "--- Second Confirmation"
+        self.driver.get_element(data="__CONFIRM__", name="secondConfirmation", type="name")
+        self.driver.click_element("secondConfirmation")
 
     #     # self.driver.close()
 
@@ -483,18 +492,14 @@ class Auth:
 
         userCode = ""
 
-        if(check_exists_by_name("challenge_response", self.driver)):
-            self.driver.get_element(data="challenge_response", name="phoneInput", type="name")
-            self.driver.send_keys_to_element(text=self.settings["TwitterPhoneNumber"], name="phoneInput", special=False)
-            self.driver.send_keys_to_element(text="RETURN", name="phoneInput", special=True)
-            if(check_exists_by_id("allow", self.driver)):
-                self.driver.get_element(data="allow", name="allow", type="id")
-                self.driver.click_element("allow")
+        self.driver.get_element(data="challenge_response", name="phoneInput", type="name")
+        self.driver.send_keys_to_element(text=self.settings["TwitterPhoneNumber"], name="phoneInput", special=False)
+        self.driver.send_keys_to_element(text="RETURN", name="phoneInput", special=True)
+        self.driver.get_element(data="allow", name="allow", type="id")
+        self.driver.click_element("allow")
 
-
-        if(check_exists_by_xpath("//kbd[@aria-labelledby='code-desc']", self.driver)):
-            self.driver.get_element(data="//kbd[@aria-labelledby='code-desc']", name="userCode", type="xpath")
-            userCode = self.browser.get_element_text(name="userCode")
+        self.driver.get_element(data="//kbd[@aria-labelledby='code-desc']", name="userCode", type="xpath")
+        userCode = self.driver.get_element_text(name="userCode")
         
         # self.driver.close()
         print userCode
