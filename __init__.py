@@ -43,6 +43,7 @@ from mycroft.skills.settings import SkillSettings
 from adapt.intent import IntentBuilder
 from mycroft.util.log import getLogger
 from mycroft.dialog import DialogLoader
+from mycroft.messagebus.message import Message
 from mycroft.api import Api
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
