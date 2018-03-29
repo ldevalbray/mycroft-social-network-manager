@@ -33,6 +33,12 @@
                         "type": "password",
                         "label": "Password",
                         "value": ""
+                    },
+                    {
+                        "name": "TwitterPhoneNumber",
+                        "type": "text",
+                        "label": "Phone Number",
+                        "value": ""
                     }
                 ]
             }
