@@ -1,0 +1,6 @@
+(send chat) (?P<Chat>.*)
+(send chat message) (?P<Chat>.*)
+(send face book chat) (?P<Chat>.*)
+(send facebook chat) (?P<Chat>.*)
+(send face book chat message) (?P<Chat>.*)
+(send facebook chat message) (?P<Chat>.*)

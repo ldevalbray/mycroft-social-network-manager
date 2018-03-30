@@ -1,0 +1,4 @@
+(when was) (?P<Person>.*)
+(to) (?P<Person>.*)
+(of|off) (?P<Person>.*)
+(does) (?P<Person>.*) (have)
