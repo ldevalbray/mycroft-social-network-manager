@@ -36,6 +36,7 @@ import time
 import twitter
 import oauth2 as oauth
 import urlparse
+import datetime
 
 from mycroft_jarbas_utils.browser import BrowserControl
 
@@ -50,6 +51,9 @@ from mycroft.util.log import LOG
 from mycroft.util.parse import extract_datetime
 from mycroft.util.format import nice_number
 from mycroft.skills.audioservice import AudioService
+
+from fbchat import Client
+from fbchat.models import *
 
 import mycroft.audio
 
@@ -93,7 +97,7 @@ class SocialMediaSkill(MycroftSkill):
             self.settings["fbUserAccessTokenExpirationDate"] = None 
 
         self.tw = Twitter(self.settings, self.driver, self.log)
-        # self.fb = Facebook(self.settings, self.driver, self.log)
+        self.fb = Facebook(self.settings, self.driver, self.log)
 
         post_intent = IntentBuilder("PostIntent"). \
             require('Post').require('SocialNetwork').build()
@@ -124,13 +128,10 @@ class SocialMediaSkill(MycroftSkill):
         self.speak_dialog("whats.up")
 
     def handle_post_intent(self, message):
-        print message.data
         post = message.data.get("Post")
         socialSaid = message.data.get("SocialNetwork")
 
-        print "social heard", socialSaid
         social = getSocialMedia(socialSaid)
-        print "social understood", social
 
         self.speak("posting " + post + " on " + social)
 
@@ -167,6 +168,8 @@ class Facebook():
         self.URL = 'https://graph.facebook.com/v2.12/'
         self.auth = Auth(settings, driver, logger)
         self.initApi() 
+
+        print self.getFriendId("Audran de valbret")
         
         # picId = self.getProfilePicId("me")
         # self.likePhoto(picId)
@@ -184,7 +187,18 @@ class Facebook():
         else:
             self.log.error("-- LOG IN FB FAILED --")
 
-    def login(self,expired = False):
+    def login(self):
+
+        expired = False
+
+        if "fbUserAccessTokenExpirationDate" in self.settings:
+            expToken = self.settings["fbUserAccessTokenExpirationDate"]
+            expDate = datetime.datetime.fromtimestamp(expToken).strftime('%Y-%m-%d %H:%M:%S')
+            dateNow = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print expDate, dateNow
+            if expDate > dateNow:
+                expired = True
+
         if ((self.settings["fbUserAccessToken"] is None) or expired ):
             DATA = {'access_token': self.appAccessToken, 'scope':'public_profile, publish_actions, user_friends, publish_actions, user_posts'}
             loginRequest = requests.post(url = self.URL + 'device/login', data = DATA)
@@ -256,6 +270,26 @@ class Facebook():
                 
                 return True
         else:
+            return False
+
+    def messageFriend(self, message, to):
+
+        try:
+            
+            self.messengerClient = Client(self.settings["FacebookEmail"], self.settings["FacebookPassword"])
+
+            friendId = self.getFriendId(friend)
+            if friendId:
+                formattedMessage = make_unicode(message)
+                self.messengerClient.send(Message(text=formattedMessage), thread_id=friendId, thread_type=ThreadType.USER)  
+                print("Messaged " + friend + " !" )
+                return True
+            else:
+                return False
+
+            self.messengerClient.logout()
+        
+        except:
             return False
 
     # def like(self, url):
@@ -358,10 +392,15 @@ class Facebook():
     #     findString = "\d_(.*)_\d"
     #     return re.search(findString, picSrc).group(1)
     
-    def getFriendId(self, foundFriend, typeToSearchFor="people"):
+    def getFriendId(self, friend, typeToSearchFor="people"):
 
         userId=None
         fbFriends = self.getFriends()
+
+        foundFriend = findMatchingString(friend, fbFriends.keys())
+
+        print foundFriend
+
         self.driver.get_url(self.driver, "https://www.facebook.com/search/"+typeToSearchFor+"/?q="+foundFriend)
         time.sleep(1)
         self.driver.get_element(data="//*[@id=\"BrowseResultsContainer\"]/div/div", name="userInfo", type="xpath")
@@ -400,7 +439,16 @@ class Twitter():
         else:
             self.log.error("-- LOGGED IN TW FAILED --")
 
-    def login(self, expired = False):
+    def login(self):
+
+        expired = False
+
+        # if self.api is not None:
+        #     try:
+        #         # self.getFriends()
+        #     except twitter.error.TwitterError:
+        #         expired = True
+
         if ((self.settings["twUserAccessToken"] is None) or expired):
 
             self.log.info("-- LOGGING IN TW --")
@@ -455,29 +503,42 @@ class Twitter():
             return False
         
     def getFriendStatus(self, friend):
-        friendFound = findMatchingString(friend, self.getFriends().keys())
-        return self.getFriends()[friendFound]["status"]["text"]
+        if self.login():
+            friendFound = findMatchingString(friend, self.getFriends().keys())
+            return self.getFriends()[friendFound]["status"]["text"]
+        else:
+            return None
 
     def retweet(self, friend):
-        friendFound = findMatchingString(friend, self.getFriends().keys())
-        return self.api.PostRetweet(self.getFriends()[friendFound]["status"]["id"])
+        if self.login():
+            friendFound = findMatchingString(friend, self.getFriends().keys())
+            self.api.PostRetweet(self.getFriends()[friendFound]["status"]["id"])
+            return True
+        return False
 
     def message(self, message, friend):
-        friendFound = findMatchingString(friend, self.getFriends().keys())
-        friendObject=self.getFriends()[friendFound]
-        return self.api.PostDirectMessage(message, user_id=friendObject["status"]["id"], screen_name=friendObject["username"])
+        if self.login():
+            friendFound = findMatchingString(friend, self.getFriends().keys())
+            friendObject=self.getFriends()[friendFound]
+            self.api.PostDirectMessage(message, user_id=friendObject["status"]["id"], screen_name=friendObject["username"])
+            return True
+        else:
+            return False
 
     def getFriends(self):
-        if(self.twFriends is None):
-            toReturn = {}
-            users = self.api.GetFriends()
-            for u in users:
-                toReturn[u.name]={"username":u.screen_name, "id":u.id, "status":{"text":u.status.text, "id":u.status.id}}
-            
-            self.settings["twFriends"] = toReturn
-            return toReturn
+        if self.login():
+            if(self.twFriends is None):
+                toReturn = {}
+                users = self.api.GetFriends()
+                for u in users:
+                    toReturn[u.name]={"username":u.screen_name, "id":u.id, "status":{"text":u.status.text, "id":u.status.id}}
+                
+                self.settings["twFriends"] = toReturn
+                return toReturn
+            else:
+                return self.twFriends
         else:
-            return self.twFriends
+            return None
 
 # This class manages all the authentication part of the social networs (Signing in, Logging in (to the SDKs) and checks if the user is signed in)
 class Auth:
@@ -494,13 +555,14 @@ class Auth:
         if openUrl is True:
             self.driver.open_url("https://facebook.com/login")
             time.sleep(2)
+
         title = self.driver.get_title()
         #if there is no title on the opened page, returns false
         if title is None:
             self.log.error("User not logged in in Facebook")
             return False
         #if there is the string Log in in the title, returns false -> user not connected
-        if "Log in" in title:
+        elif "Log in" in title or "Log into" in title or "Login" in title or "Verify" in title:
             self.log.error("User not logged in in Facebook")
             return False
         #Else returns true -> user connected
@@ -514,13 +576,14 @@ class Auth:
         if openUrl is True:
             self.driver.open_url("https://twitter.com/login")
             time.sleep(2)
+
         title = self.driver.get_title()
         #if there is no title on the opened page, returns false
         if title is None:
             self.log.error("User not logged in in Twitter")
             return False
         #if there is the string Login in the title, returns false -> user not connected
-        if "Login" in title or "Verify" in title:
+        elif "Log in" in title or "Log into" in title or "Login" in title or "Verify" in title:
             self.log.error("User not logged in in Twitter")
             return False
         #Else returns true -> user connected
@@ -537,11 +600,10 @@ class Auth:
             self.driver.open_url(url)
             time.sleep(2)
             self.driver.get_element(data="email", name="email", type="name")
-            self.driver.send_keys_to_element(text=self.settings["FacebookEmail"], name="email", special=False)
             self.driver.get_element(data="pass", name="pass", type="name")
+            self.driver.send_keys_to_element(text=self.settings["FacebookEmail"], name="email", special=False)
             self.driver.send_keys_to_element(text=self.settings["FacebookPassword"], name="pass", special=False)
-            self.driver.get_element(data="login", name="login", type="name")
-            self.driver.click_element("login")
+            self.driver.send_keys_to_element(text="RETURN", name="pass", special=True)
             time.sleep(5)
             return self.isLoggedInFb(False)
         return isLoggedIn
@@ -667,6 +729,7 @@ def is_number(n):
 
 def getAllData(data, code):
     toReturn = {}
+    print "data", data
     for d in data["data"]:
         exec(code)
     while("next" in data["paging"]):
