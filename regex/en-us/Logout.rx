@@ -1,0 +1,2 @@
+(logout|log out|sign out) (from|at|on) (?P<SocialNetwork>.*)?
+

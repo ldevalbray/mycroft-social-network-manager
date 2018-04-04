@@ -16,6 +16,12 @@
                         "type": "password",
                         "label": "Password",
                         "value": ""
+                    },
+                    {
+                        "name": "fbAppAccessToken",
+                        "type": "text",
+                        "label": "Facebook App Access Token",
+                        "value": ""
                     }
                 ]
             },
@@ -38,6 +44,18 @@
                         "name": "TwitterPhoneNumber",
                         "type": "text",
                         "label": "Phone Number",
+                        "value": ""
+                    },
+                    {
+                        "name": "twConsumerKey",
+                        "type": "text",
+                        "label": "Twitter App Consumer Key",
+                        "value": ""
+                    },
+                    {
+                        "name": "twConsumerSecret",
+                        "type": "text",
+                        "label": "Twitter App Consumer Secret",
                         "value": ""
                     }
                 ]

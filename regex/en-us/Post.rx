@@ -1,1 +1,1 @@
-(?P<Post>.*)
+(post|publish|share) (?P<Post>.*?) (at|on|in)?
