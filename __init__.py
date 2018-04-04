@@ -59,7 +59,6 @@ import mycroft.audio
 
 __author__ = 'ldevalbray'
 
-
 import logging
 # disable logs from requests and urllib 3, or there is too much spam from facebook
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -99,33 +98,24 @@ class SocialMediaSkill(MycroftSkill):
         self.tw = Twitter(self.settings, self.driver, self.log)
         self.fb = Facebook(self.settings, self.driver, self.log)
 
+        message_intent = IntentBuilder("MessageIntent"). \
+            require('MessageIntentKeyword'). \
+            require('Message'). \
+            require('OnSocialIntentKeyword'). \
+            require('SocialNetwork'). \
+            build()
+        self.register_intent(message_intent,
+                             self.handle_message_intent)
+
         post_intent = IntentBuilder("PostIntent"). \
-            require('Post').require('SocialNetwork').build()
+            require('PostIntentKeyword'). \
+            require('Post'). \
+            require('OnSocialIntentKeyword'). \
+            require('SocialNetwork'). \
+            build()
         self.register_intent(post_intent,
                              self.handle_post_intent)
 
-        thank_you_intent = IntentBuilder("ThankYouIntent").\
-            require("ThankYouKeyword").build()
-        self.register_intent(thank_you_intent, self.handle_thank_you_intent)
-
-        how_are_you_intent = IntentBuilder("HowAreYouIntent").\
-            require("HowAreYouKeyword").build()
-        self.register_intent(how_are_you_intent,
-                             self.handle_how_are_you_intent)
-
-        whats_up_intent = IntentBuilder("WhatsUpIntent").\
-            require("WhatsupKeyword").build()
-        self.register_intent(whats_up_intent,
-                             self.handle_whats_up_intent)
-
-    def handle_thank_you_intent(self, message):
-        self.speak_dialog("welcome")
-
-    def handle_how_are_you_intent(self, message):
-        self.speak_dialog("how.are.you")
-
-    def handle_whats_up_intent(self, message):
-        self.speak_dialog("whats.up")
 
     def handle_post_intent(self, message):
         post = message.data.get("Post")
@@ -151,6 +141,35 @@ class SocialMediaSkill(MycroftSkill):
         else:
             print "Could not post :("
 
+    def handle_message_intent(self, message):
+
+        print message.data
+
+        messageText = message.data.get("Message")
+        socialSaid = message.data.get("SocialNetwork")
+
+        print messageText
+
+        social = getSocialMedia(socialSaid)
+
+        self.speak("Messaging " + messageText + " on " + social)
+
+        messaged = False
+        
+        if social == FACEBOOK:
+            messaged = self.fb.message(messageText, "me")
+        elif social == TWITTER:
+            messaged = self.tw.message(messageText, "dodie")
+        else:
+            if(self.fb.message(messageText, "me") and self.tw.message(messageText, "dodie")):
+                messaged = True
+
+        if messaged:
+            print "Messaged !!"
+            self.speak_dialog("Message")
+        else:
+            print "Could not message :("
+
     def stop(self):
         pass
 
@@ -169,7 +188,6 @@ class Facebook():
         self.auth = Auth(settings, driver, logger)
         self.initApi() 
 
-        print self.getFriendId("Audran de valbret")
         
         # picId = self.getProfilePicId("me")
         # self.likePhoto(picId)
@@ -193,11 +211,12 @@ class Facebook():
 
         if "fbUserAccessTokenExpirationDate" in self.settings:
             expToken = self.settings["fbUserAccessTokenExpirationDate"]
-            expDate = datetime.datetime.fromtimestamp(expToken).strftime('%Y-%m-%d %H:%M:%S')
-            dateNow = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            print expDate, dateNow
-            if expDate > dateNow:
+            expDate = datetime.datetime.fromtimestamp(float(expToken)).strftime('%Y-%m-%d %H:%M:%S')
+            dateNow = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            if expDate < dateNow:
                 expired = True
+                print "Session expired"
 
         if ((self.settings["fbUserAccessToken"] is None) or expired ):
             DATA = {'access_token': self.appAccessToken, 'scope':'public_profile, publish_actions, user_friends, publish_actions, user_posts'}
@@ -227,7 +246,9 @@ class Facebook():
 
             if 'access_token' in awaitingUserLoginRes.keys():
                 self.settings["fbUserAccessToken"] = awaitingUserLoginRes['access_token']
-                self.settings["fbUserAccessTokenExpirationDate"] = awaitingUserLoginRes['expires_in']
+                expirationDate = datetime.datetime.now() + datetime.timedelta(0,awaitingUserLoginRes['expires_in'])
+                self.settings["fbUserAccessTokenExpirationDate"] = expirationDate.strftime('%s')
+                
                 return self.login()
             
             else:
@@ -272,13 +293,14 @@ class Facebook():
         else:
             return False
 
-    def messageFriend(self, message, to):
+    def message(self, message, friend):
 
         try:
             
             self.messengerClient = Client(self.settings["FacebookEmail"], self.settings["FacebookPassword"])
 
-            friendId = self.getFriendId(friend)
+            # friendId = self.getFriendId(friend)
+            friendId = "100000646720803"
             if friendId:
                 formattedMessage = make_unicode(message)
                 self.messengerClient.send(Message(text=formattedMessage), thread_id=friendId, thread_type=ThreadType.USER)  
@@ -331,8 +353,12 @@ class Facebook():
     #         userId= self.userInfo["id"]
     #     self.comment("https://www.facebook.com/"+userId+"/posts/"+postId, comment)
     
-    def getFriends(self):
-        if self.login():
+    def getFriends(self, checkLogin = True):
+        loggedIn = True
+        if checkLogin == True:
+            loggedIn = self.login()
+        
+        if loggedIn:
             if(self.fbFriends is None):
                 return getAllData(self.api.get_object("me/taggable_friends"), "toReturn[d[\"name\"]] = {\"picture_url\":d[\"picture\"][\"data\"][\"url\"], \"taggableID\":d[\"id\"]}")
             else:
@@ -340,8 +366,12 @@ class Facebook():
         else:
             return None
 
-    def getNumberOfFriends(self):
-        if self.login():
+    def getNumberOfFriends(self, checkLogin = True):
+        loggedIn = True
+        if checkLogin == True:
+            loggedIn = self.login()
+
+        if loggedIn:
             return self.api.get_connections(id='me', connection_name='friends')['summary']['total_count']
         else:
             return None
@@ -401,8 +431,7 @@ class Facebook():
 
         print foundFriend
 
-        self.driver.get_url(self.driver, "https://www.facebook.com/search/"+typeToSearchFor+"/?q="+foundFriend)
-        time.sleep(1)
+        get_url(self.driver, "https://www.facebook.com/search/"+typeToSearchFor+"/?q="+foundFriend)
         self.driver.get_element(data="//*[@id=\"BrowseResultsContainer\"]/div/div", name="userInfo", type="xpath")
         data = self.driver.get_attribute(attribute = "data-bt", name = "userInfo")
         userId = re.search("id\":(\d*),", data).group(1)
@@ -644,12 +673,15 @@ class Auth:
             self.driver.send_keys_to_element(text=userCode, name="userCodeElement", special=False)
             self.driver.send_keys_to_element(text="RETURN", name="userCodeElement", special=True)
 
+            time.sleep(1)
             print "--- First Confirmation"
             self.driver.get_element(data="__CONFIRM__", name="firstConfirmation", type="name")
             self.driver.click_element("firstConfirmation")
+            time.sleep(1)
             print "--- Second Confirmation"
             self.driver.get_element(data="__CONFIRM__", name="secondConfirmation", type="name")
             self.driver.click_element("secondConfirmation")
+            time.sleep(1)
 
 
     #Method to activate the social-network mycroft skill app on his twitter account automatically
@@ -664,8 +696,10 @@ class Auth:
             self.driver.get_element(data="challenge_response", name="phoneInput", type="name")
             self.driver.send_keys_to_element(text=self.settings["TwitterPhoneNumber"], name="phoneInput", special=False)
             self.driver.send_keys_to_element(text="RETURN", name="phoneInput", special=True)
+            time.sleep(1)
             self.driver.get_element(data="allow", name="allow", type="id")
             self.driver.click_element("allow")
+            time.sleep(1)
 
             self.driver.get_element(data="//kbd[@aria-labelledby='code-desc']", name="userCode", type="xpath")
             userCode = self.driver.get_element_text(name="userCode")
@@ -732,13 +766,13 @@ def getAllData(data, code):
     print "data", data
     for d in data["data"]:
         exec(code)
-    while("next" in data["paging"]):
-        data = requests.get(data["paging"]["next"]).json()
-        for d in data["data"]:
-            exec(code)
+    if "paging" in data:
+        while("next" in data["paging"]):
+            data = requests.get(data["paging"]["next"]).json()
+            for d in data["data"]:
+                exec(code)
     
     return toReturn
-
 
 def create_skill():
     return SocialMediaSkill()
