@@ -95,12 +95,31 @@ class SocialMediaSkill(MycroftSkill):
         if "fbUserAccessTokenExpirationDate" not in self.settings:
             self.settings["fbUserAccessTokenExpirationDate"] = None 
 
-        self.tw = Twitter(self.settings, self.driver, self.log, self.getConfirmation)
-        self.fb = Facebook(self.settings, self.driver, self.log, self.getConfirmation)
+        self.tw = Twitter(self.settings, self.driver, self.log, self.getConfirmation, self.speak)
+        self.fb = Facebook(self.settings, self.driver, self.log, self.getConfirmation, self.speak)
 
         self.declareIntents()
 
     def declareIntents(self):
+
+        #both twitter and fb intents
+
+        #login to twitter --> not working
+        login_intent = IntentBuilder("LoginIntent"). \
+            require('Login'). \
+            build()
+        self.register_intent(login_intent,
+                             self.handle_login_intent)
+
+        #logout from twitter --> not working
+        logout_intent = IntentBuilder("LogoutIntent"). \
+            require('LogoutIntentKeyword'). \
+            optionally('Logout'). \
+            build()
+        self.register_intent(logout_intent,
+                             self.handle_logout_intent) 
+
+        #message test to louis on twitter --> working
         message_intent = IntentBuilder("MessageIntent"). \
             require('Message'). \
             require('Person'). \
@@ -109,6 +128,7 @@ class SocialMediaSkill(MycroftSkill):
         self.register_intent(message_intent,
                              self.handle_message_intent)
 
+        #post test on facebook --> working
         post_intent = IntentBuilder("PostIntent"). \
             require('Post'). \
             optionally('SocialNetwork'). \
@@ -116,6 +136,7 @@ class SocialMediaSkill(MycroftSkill):
         self.register_intent(post_intent,
                              self.handle_post_intent)
 
+        #post test to louis on facebook --> working
         post_to_intent = IntentBuilder("PostToIntent"). \
             require('Post'). \
             require('Person'). \
@@ -124,47 +145,45 @@ class SocialMediaSkill(MycroftSkill):
         self.register_intent(post_to_intent,
                              self.handle_post_to_intent)
 
+        #facebook only intents
+
+        #comment louis picture nice pic --> not working
         comment_intent = IntentBuilder("CommentIntent"). \
             require('Comment'). \
             build()
         self.register_intent(comment_intent,
                              self.handle_comment_intent)
 
+        #like louis picture --> not working
         like_intent = IntentBuilder("LikeIntent"). \
             require('Like'). \
             build()
         self.register_intent(like_intent,
                              self.handle_like_intent)
 
+        #number of friends --> not working
         friends_number_intent = IntentBuilder("FriendsNumberIntent"). \
             require('NumberOfFriendsIntentKeyword'). \
             build()
         self.register_intent(friends_number_intent,
                              self.handle_friends_number_intent)
 
+         #twitter only intents
+
+        #retweet louis --> not working
         retweet_intent = IntentBuilder("RetweetIntent"). \
             require('Retweet'). \
             build()
         self.register_intent(retweet_intent,
                              self.handle_retweet_intent)
 
+        #get louis status  --> not working
         friend_status_intent = IntentBuilder("FriendsStatusIntent"). \
             require('Status'). \
             build()
         self.register_intent(friend_status_intent,
                              self.handle_friend_status_intent)
 
-        login_intent = IntentBuilder("LoginIntent"). \
-            require('Login'). \
-            build()
-        self.register_intent(login_intent,
-                             self.handle_login_intent)
-
-        logout_intent = IntentBuilder("LogoutIntent"). \
-             require('Logout'). \
-            build()
-        self.register_intent(logout_intent,
-                             self.handle_logout_intent)
 
 
     def handle_login_intent(self, message):
@@ -415,7 +434,7 @@ class SocialMediaSkill(MycroftSkill):
 
 class Facebook():
 
-    def __init__(self, settings, driver, logger, getConfirmation):
+    def __init__(self, settings, driver, logger, getConfirmation, speak):
         
         self.log = logger   
         self.settings = settings
@@ -423,6 +442,7 @@ class Facebook():
         self.api = None
         self.fbFriends = None
         self.getConfirmation = getConfirmation
+        self.speak = speak
        
         self.URL = 'https://graph.facebook.com/v2.12/'
         self.auth = Auth(settings, driver, logger)
@@ -432,7 +452,7 @@ class Facebook():
 
         # print self.message(u"test", "Louis de Valbray")
 
-        print self.likeProfilePic("Louis de Valbray")
+        # print self.likeProfilePic("Louis de Valbray")
         # print self.commentProfilePic("Nice !", "Louis de Valbray")
 
         # picId = self.getProfilePicId("me")
@@ -455,8 +475,10 @@ class Facebook():
         if self.login():
             self.api = facebook.GraphAPI(access_token=self.settings["fbUserAccessToken"])
             self.setUserInfo()
+            self.speak("logged in facebook successfully")
             self.log.info("-- LOGGED IN FB --")
         else:
+            self.speak("logging in facebook failed")
             self.log.error("-- LOG IN FB FAILED --")
 
 
@@ -479,6 +501,7 @@ class Facebook():
             data = loginRequest.json()
 
             self.log.info("-- LOGGING IN FB --")
+            self.speak("logging in facebook")
 
             code = data['code']
             userCode = data['user_code']
@@ -736,13 +759,14 @@ class Facebook():
 
 class Twitter():
     
-    def __init__(self, settings, driver, logger, getConfirmation):
+    def __init__(self, settings, driver, logger, getConfirmation, speak):
 
         self.log = logger
         self.settings = settings
         self.driver = driver
         self.api = None
         self.getConfirmation = getConfirmation
+        self.speak = speak
 
         self.auth = Auth(settings, driver, logger)
         self.initApi()
@@ -775,10 +799,11 @@ class Twitter():
                     consumer_secret=self.consumerSecret,
                     access_token_key=self.settings["twUserAccessToken"],
                     access_token_secret=self.settings["twUserAccessTokenSecret"])
-            self.speak("logged in twitter")
+            self.speak("logged in twitter successfully")
             self.log.info("-- LOGGED IN TW --")
         else:
-            self.log.error("-- LOGGED IN TW FAILED --")
+            self.speak("logging in twitter failed")
+            self.log.error("-- LOG IN TW FAILED --")
 
     def login(self):
 
@@ -792,6 +817,7 @@ class Twitter():
 
         if ((self.settings["twUserAccessToken"] is None) or expired):
 
+            self.speak("logging in twitter")
             self.log.info("-- LOGGING IN TW --")
 
             consumer_key = self.consumerKey
