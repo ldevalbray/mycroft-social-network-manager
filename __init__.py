@@ -37,6 +37,7 @@ import twitter
 import oauth2 as oauth
 import urlparse
 import datetime
+import re
 
 from mycroft_jarbas_utils.browser import BrowserControl
 
@@ -95,73 +96,77 @@ class SocialMediaSkill(MycroftSkill):
         if "fbUserAccessTokenExpirationDate" not in self.settings:
             self.settings["fbUserAccessTokenExpirationDate"] = None 
 
-        self.tw = Twitter(self.settings, self.driver, self.log, self.getConfirmation, self.speak)
-        self.fb = Facebook(self.settings, self.driver, self.log, self.getConfirmation, self.speak)
+        self.tw = Twitter(self.settings, self.driver, self.log, self.getConfirmation, self.speak, emitter)
+        self.fb = Facebook(self.settings, self.driver, self.log, self.getConfirmation, self.speak, emitter)
 
         self.declareIntents()
+
+       
 
     def declareIntents(self):
 
         #both twitter and fb intents
 
-        #login to twitter --> not working
+        #login
         login_intent = IntentBuilder("LoginIntent"). \
-            require('Login'). \
+            require('LoginIntentKeyword'). \
             build()
         self.register_intent(login_intent,
                              self.handle_login_intent)
 
-        #logout from twitter --> not working
+        #logout
         logout_intent = IntentBuilder("LogoutIntent"). \
             require('LogoutIntentKeyword'). \
-            optionally('Logout'). \
             build()
         self.register_intent(logout_intent,
                              self.handle_logout_intent) 
 
-        #message test to louis on twitter --> working
+        #message test to louis de valbray
         message_intent = IntentBuilder("MessageIntent"). \
+            require('MessageIntentKeyword'). \
             require('Message'). \
             require('Person'). \
-            require('SocialNetwork'). \
             build()
-        self.register_intent(message_intent,
+        self.register_intent(message_intent, 
                              self.handle_message_intent)
 
-        #post test on facebook --> working
+        #post test to louis 
+        share_intent = IntentBuilder("ShareIntent"). \
+            require('ShareIntentKeyword'). \
+            require('Share'). \
+            require('Person'). \
+            build()
+        self.register_intent(share_intent,
+                             self.handle_share_intent)
+
+        #post test
         post_intent = IntentBuilder("PostIntent"). \
+            require('PostIntentKeyword'). \
             require('Post'). \
-            optionally('SocialNetwork'). \
             build()
         self.register_intent(post_intent,
                              self.handle_post_intent)
 
-        #post test to louis on facebook --> working
-        post_to_intent = IntentBuilder("PostToIntent"). \
-            require('Post'). \
-            require('Person'). \
-            require('SocialNetwork'). \
-            build()
-        self.register_intent(post_to_intent,
-                             self.handle_post_to_intent)
-
         #facebook only intents
 
-        #comment louis picture nice pic --> not working
+        #comment test on louis de valbray profile picture
         comment_intent = IntentBuilder("CommentIntent"). \
+            require('CommentIntentKeyword'). \
             require('Comment'). \
+            require('Person'). \
             build()
         self.register_intent(comment_intent,
                              self.handle_comment_intent)
 
-        #like louis picture --> not working
+        #like the profile picture of louis de valbray
         like_intent = IntentBuilder("LikeIntent"). \
-            require('Like'). \
+            require('LikeIntentKeyword'). \
+            require('Person'). \
             build()
         self.register_intent(like_intent,
                              self.handle_like_intent)
 
-        #number of friends --> not working
+        #how many friends do i have ?
         friends_number_intent = IntentBuilder("FriendsNumberIntent"). \
             require('NumberOfFriendsIntentKeyword'). \
             build()
@@ -170,16 +175,18 @@ class SocialMediaSkill(MycroftSkill):
 
          #twitter only intents
 
-        #retweet louis --> not working
+        #retweet louis
         retweet_intent = IntentBuilder("RetweetIntent"). \
+            require('RetweetIntentKeyword'). \
             require('Retweet'). \
             build()
         self.register_intent(retweet_intent,
                              self.handle_retweet_intent)
 
-        #get louis status  --> not working
+        #get/fetch louis status
         friend_status_intent = IntentBuilder("FriendsStatusIntent"). \
-            require('Status'). \
+            require('StatusIntentKeyword'). \
+            require('TwitterStatus'). \
             build()
         self.register_intent(friend_status_intent,
                              self.handle_friend_status_intent)
@@ -187,15 +194,10 @@ class SocialMediaSkill(MycroftSkill):
 
 
     def handle_login_intent(self, message):
-        print message.data
 
-        socialSaid = message.data.get("SocialNetwork")
-
-        print socialSaid
+        socialSaid = self.getSocialNetworkConfirmation()
 
         social = getSocialMedia(socialSaid)
-
-        print "social : ", social
 
         login = False
         
@@ -216,23 +218,13 @@ class SocialMediaSkill(MycroftSkill):
                 self.speak_dialog("loggedInFb")
                 self.speak_dialog("loggedInTw")
 
-            print "Logged in !!"
             self.speak("Logged in successfully")
         else:
-            print "Failed to log in :("
             self.speak("Failed to log in")
 
     def handle_logout_intent(self, message):
-        print message.data
-
-        socialSaid = message.data.get("SocialNetwork")
-
-        print socialSaid
-
+        socialSaid = self.getSocialNetworkConfirmation()
         social = getSocialMedia(socialSaid)
-
-        print "social : ", social
-
         logout = False
         
         if social == FACEBOOK:
@@ -252,139 +244,125 @@ class SocialMediaSkill(MycroftSkill):
                 self.speak_dialog("loggedOutFb")
                 self.speak_dialog("loggedOutTw")
 
-            print "Logged out !!"
             self.speak("Logged out successfully")
         else:
-            print "Failed to log out :("
             self.speak("Failed to log out")
 
     def handle_post_intent(self, message):
-        print message.data
-
         post = message.data.get("Post")
-        socialSaid = message.data.get("SocialNetwork")
-
-        print post, socialSaid
-
+        socialSaid = self.getSocialNetworkConfirmation()
         social = getSocialMedia(socialSaid)
-
-        print "social : ", social
         
         if self.getConfirmation("post.confirmation", dict(text=post, socialNetwork=social)):
-
-            posted = False
             
             if social == FACEBOOK:
-                posted = self.fb.post(post)
+                if self.fb.post(post):
+                    self.speak_dialog("post", dict(socialNetwork="Facebook"))
+                else:
+                    self.speak("Sorry, I could not post your message on Facebook")
+
             elif social == TWITTER:
-                posted = self.tw.post(post)
+                if self.tw.post(post) :
+                    self.speak_dialog("post", dict(socialNetwork="Twitter"))
+                else:
+                    self.speak("Sorry, I could not post your message on Twitter")
+                    
             else:
-                if(self.fb.post(post) and self.tw.post(post)):
-                    posted = True
+                if self.fb.post(post):
+                    self.speak_dialog("post", dict(socialNetwork="Facebook"))
+                else:
+                    self.speak("Sorry, I could not post your message on Facebook")
 
-            if posted:
-                print "Posted !!"
-                self.speak_dialog("post")
-            else:
-                self.speak("Sorry, I could not post your message")
-                print "Could not post :("
+                if self.tw.post(post) :
+                    self.speak_dialog("post", dict(socialNetwork="Twitter"))
+                else:
+                    self.speak("Sorry, I could not post your message on Twitter")
+
     
-    def handle_post_to_intent(self, message):
-        print message.data
-
-        post = message.data.get("Post")
+    def handle_share_intent(self, message):
+        post = message.data.get("Share")
         person = message.data.get("Person")
-        socialSaid = message.data.get("SocialNetwork")
-
-        print post, person, socialSaid
+        socialSaid = self.getSocialNetworkConfirmation()
 
         social = getSocialMedia(socialSaid)
 
-        print "social : ", social
 
         if self.getConfirmation("postTo.confirmation", dict(text=post, person=person, socialNetwork=social)):
 
-            posted = False
-            
             if social == FACEBOOK:
-                posted = self.fb.post(post, person)
-            elif social == TWITTER:
-                posted = self.tw.post(post, person)
-            else:
-                if(self.fb.post(post, person) and self.tw.post(post, person)):
-                    posted = True
+                if self.fb.post(post, person):
+                    self.speak_dialog("post", dict(socialNetwork="Facebook"))
+                else:
+                    self.speak("Sorry, I could not post your message on Facebook")
 
-            if posted:
-                print "Posted !!"
-                self.speak_dialog("post")
+            elif social == TWITTER:
+                if self.tw.post(post, person) :
+                    self.speak_dialog("post", dict(socialNetwork="Twitter"))
+                else:
+                    self.speak("Sorry, I could not post your message on Twitter")
+                    
             else:
-                self.speak("Sorry, I could not post your message")
-                print "Could not post :("
+                if self.fb.post(post, person):
+                    self.speak_dialog("post", dict(socialNetwork="Facebook"))
+                else:
+                    self.speak("Sorry, I could not post your message on Facebook")
+
+                if self.tw.post(post, person) :
+                    self.speak_dialog("post", dict(socialNetwork="Twitter"))
+                else:
+                    self.speak("Sorry, I could not post your message on Twitter")
+
+         
 
     def handle_message_intent(self, message):
-
-        print message.data
-
         messageText = message.data.get("Message")
         person = message.data.get("Person")
-        socialSaid = message.data.get("SocialNetwork")
-
-        print messageText, person, socialSaid
-
-        self.speak("Messaging " + messageText + " on " + socialSaid)
+        socialSaid = self.getSocialNetworkConfirmation()
 
         social = getSocialMedia(socialSaid)
 
-        print "social : ", social
-
         if self.getConfirmation("message.confirmation", dict(text=messageText, person=person, socialNetwork=social)):
-            messaged = False
             
             if social == FACEBOOK:
-                messaged = self.fb.message(messageText, person)
-            elif social == TWITTER:
-                messaged = self.tw.message(messageText, person)
-            else:
-                if(self.fb.message(messageText, person) and self.tw.message(messageText, person)):
-                    messaged = True
+                if self.fb.message(messageText, person):
+                    self.speak_dialog("Message", dict(socialNetwork="facebook"))
+                else:
+                    self.speak("Sorry, I could not send your message on facebook")
 
-            if messaged:
-                print "Messaged !!"
-                self.speak_dialog("Message")
+            elif social == TWITTER:
+                if self.tw.message(messageText, person):
+                    self.speak_dialog("Message", dict(socialNetwork="twitter"))
+                else:
+                    self.speak("Sorry, I could not send your message on twitter")
             else:
-                self.speak("Sorry, I could not send your message")
-                print "Could not message :("
+                if self.fb.message(messageText, person):
+                    self.speak_dialog("Message", dict(socialNetwork="facebook"))
+                else:
+                    self.speak("Sorry, I could not send your message on facebook")
+                
+                if self.tw.message(messageText, person):
+                    self.speak_dialog("Message", dict(socialNetwork="twitter"))
+                else:
+                    self.speak("Sorry, I could not send your message on twitter")
 
     #Specific to facebook
 
     def handle_comment_intent(self, message):
-        print message.data
-
         person = message.data.get("Person")
         comment = message.data.get("Comment")
 
-        print  person, comment
-
         if self.fb.commentProfilePic(comment, person):
-            print "Commented !!"
             self.speak("Comment posted successfully !")
         else:
             self.speak("Sorry, I could not comment" )
-            print "Could not comment :("
 
     def handle_like_intent(self, message):
-        print message.data
-
         person = message.data.get("Person")
 
-        print  person
-
         if self.fb.likeProfilePic(person):
-            print "Liked !!"
             self.speak("Liked the profile picture succesfully !")
         else:
             self.speak("Sorry, I could not like the profile picture" )
-            print "Could not Like :("
 
     def handle_friends_number_intent(self, message):
         numberofFriends = self.fb.getNumberOfFriends()
@@ -396,9 +374,7 @@ class SocialMediaSkill(MycroftSkill):
     #Specific to twitter
 
     def handle_retweet_intent(self, message):
-        person = message.data.get("Person")
-
-        print person
+        person = message.data.get("Retweet")
 
         if self.tw.retweet(person):
             self.speak("Retweeted")
@@ -406,9 +382,7 @@ class SocialMediaSkill(MycroftSkill):
             self.speak("Failed to retweet")
     
     def handle_friend_status_intent(self, message):
-        person = message.data.get("Person")
-
-        print person
+        person = message.data.get("TwitterStatus")
 
         status = self.tw.getFriendStatus(person)
 
@@ -428,13 +402,20 @@ class SocialMediaSkill(MycroftSkill):
         except:
             return False
 
+    def getSocialNetworkConfirmation(self):
+        try:
+            response = self.get_response("socialNetwork.confirmation")
+            return getSocialMedia(response)
+        except:
+            return getSocialMedia("both")
+
     def stop(self):
         pass
 
 
 class Facebook():
 
-    def __init__(self, settings, driver, logger, getConfirmation, speak):
+    def __init__(self, settings, driver, logger, getConfirmation, speak, emitter):
         
         self.log = logger   
         self.settings = settings
@@ -443,24 +424,13 @@ class Facebook():
         self.fbFriends = None
         self.getConfirmation = getConfirmation
         self.speak = speak
+        self.emitter = emitter
+
+        self.messengerClient = None
        
         self.URL = 'https://graph.facebook.com/v2.12/'
         self.auth = Auth(settings, driver, logger)
         self.initApi() 
-
-        # print self.getFriends()
-
-        # print self.message(u"test", "Louis de Valbray")
-
-        # print self.likeProfilePic("Louis de Valbray")
-        # print self.commentProfilePic("Nice !", "Louis de Valbray")
-
-        # picId = self.getProfilePicId("me")
-        # self.likePhoto(picId)
-        # print self.getLikes("10215117266189517")
-        # self.commentPhoto(picId, "test")
-        # self.commentPost( "10215117266189517", "Top !")
-        # self.post("test", "me", "Audren de Valbray")
 
     
     def initApi(self):
@@ -486,6 +456,9 @@ class Facebook():
 
         expired = False
 
+        if not self.messengerClient:
+            self.messengerClient = Client(self.settings["FacebookEmail"], self.settings["FacebookPassword"])
+
         if "fbUserAccessTokenExpirationDate" in self.settings:
             expToken = self.settings["fbUserAccessTokenExpirationDate"]
             expDate = datetime.datetime.fromtimestamp(float(expToken)).strftime('%Y-%m-%d %H:%M:%S')
@@ -493,7 +466,6 @@ class Facebook():
 
             if expDate < dateNow:
                 expired = True
-                print "Session expired"
 
         if ((self.settings["fbUserAccessToken"] is None) or expired ):
             DATA = {'access_token': self.appAccessToken, 'scope':'public_profile, publish_actions, user_friends, publish_actions, user_posts'}
@@ -516,11 +488,9 @@ class Facebook():
             self.auth.loginFb(verificationURI, userCode)
         
             while 'access_token' not in awaitingUserLoginRes.keys() :
-                #print "-------- AWAITING USER RES STATUS ----/" 
                 time.sleep(7)
                 awaitingUserLoginRequest = requests.post(url = self.URL +'device/login_status', data = DATA2)
                 awaitingUserLoginRes = awaitingUserLoginRequest.json()
-                print 'Authentification ... ', verificationURI
 
             if 'access_token' in awaitingUserLoginRes.keys():
                 self.settings["fbUserAccessToken"] = awaitingUserLoginRes['access_token']
@@ -536,20 +506,21 @@ class Facebook():
 
     def logout(self):
         self.settings["fbUserAccessToken"] = None
-        self.driver.shutdown()
-        self.driver = BrowserControl(emitter)
-        time.sleep(2)
-        return not self.auth.isLoggedInFb()
+        driverRestarted = restartDriver(self.driver)
+        self.messengerClient.logout()
+        self.messengerClient = None
+
+        # return not self.auth.isLoggedInFb() and driverRestarted
+        return True
 
     def post(self, message, to="me", tag="none"):
         if self.login():
             if(to != "me"):
                 userId = self.getFriendId(to)
-                # userId="1367527960"
 
                 if userId:
     
-                    get_url(self.driver, "m.facebook.com/"+userId)  # profile page
+                    get_url(self.driver, "m.facebook.com/"+userId)
                     self.driver.get_element(data=".// *[ @ id = 'u_0_0']", name="post_box", type="xpath")
                     
                     self.driver.click_element("post_box")
@@ -578,23 +549,21 @@ class Facebook():
     def message(self, message, friend):
 
         try:
-            
-            self.messengerClient = Client(self.settings["FacebookEmail"], self.settings["FacebookPassword"])
 
-            friendId = self.getFriendId(friend)
-            print "friendId", friendId
-            if friendId:
-                formattedMessage = make_unicode(message)
-                self.messengerClient.send(Message(text=formattedMessage), thread_id=friendId, thread_type=ThreadType.USER)  
-                print("Messaged " + friend + " !" )
-                return True
+            if self.login():
+      
+                friendId = self.getFriendId(friend)
+                if friendId:
+                    formattedMessage = make_unicode(message)
+                    self.messengerClient.send(Message(text=formattedMessage), thread_id=friendId, thread_type=ThreadType.USER)  
+                    return True
+                else:
+                    return False
+
             else:
                 return False
-
-            self.messengerClient.logout()
-        
+           
         except Exception as e: 
-            print e
             return False
 
     def likeProfilePic(self, friend):
@@ -610,7 +579,6 @@ class Facebook():
             else:
                 return False
         except Exception as e: 
-            print e
             return False
 
     def commentProfilePic(self, comment, friend):
@@ -619,14 +587,12 @@ class Facebook():
                 friendId = self.getFriendId(friend)
                 if friendId:
                     picId = self.getProfilePicId(friendId)
-                    # picId = "10214802871649850"
                     return self.commentPhoto(comment, picId, False)
                 else:
                     return False
             else:
                 return False
         except Exception as e: 
-            print e
             return False
 
     def likePhoto(self, photoId, checkLogin = True):
@@ -644,7 +610,6 @@ class Facebook():
             if not liked:
                 return self.driver.click_element("like_btn")
             else:
-                print "Already Liked"
                 return True
         else:
             return False
@@ -659,21 +624,35 @@ class Facebook():
             
             self.driver.get_element(data="//*[@id=\"composerInput\"]", name="comment_input", type="xpath")
             self.driver.send_keys_to_element(text=comment, name="comment_input", special=False)
-            return  self.driver.send_keys_to_element(text="RETURN", name="comment_input", special=True)
+            self.driver.get_element(data="/html/body/div/div/div[2]/div/div[1]/div/div/div[3]/div[2]/div/div/div[5]/form/table/tbody/tr/td[2]/div/input", name="comment_submit", type="xpath")
+            return  self.driver.click_element(name="comment_submit")
            
         else:
             return False
     
     def getFriends(self, checkLogin = True):
+
         loggedIn = True
         if checkLogin == True:
             loggedIn = self.login()
         
         if loggedIn:
             if(self.fbFriends is None):
-                return getAllData(self.api.get_object("me/taggable_friends"), "toReturn[d[\"name\"]] = {\"picture_url\":d[\"picture\"][\"data\"][\"url\"], \"taggableID\":d[\"id\"]}")
-            else:
-                return self.fbFriends
+                try:
+            
+                    friendsList = {}
+
+                    friends = self.messengerClient.fetchAllUsers()
+                    
+                    for friend in friends:
+                        friendsList[friend.name] = friend.uid
+
+                    self.fbFriends = friendsList
+                
+                except Exception as e: 
+                    return False
+            
+            return self.fbFriends
         else:
             return None
 
@@ -704,14 +683,9 @@ class Facebook():
         picSrc = None
         if friendId == "me":
             friendId = self.userInfo['id']
-        if is_number(friendId):
-            r = requests.get("https://graph.facebook.com/"+friendId+"/picture")
-            picSrc = r.url
-        else:
-            friends = self.getFriends()
-            foundFriend = findMatchingString(friendId, friends.keys())
-            picSrc = friends[foundFriend]["picture_url"]
 
+        r = requests.get("https://graph.facebook.com/"+friendId+"/picture")
+        picSrc = r.url
         findString = "\d_(.*)_\d"
         return re.search(findString, picSrc).group(1)
     
@@ -724,12 +698,7 @@ class Facebook():
 
         if self.getConfirmation("person.confirmation", dict( person=foundFriend )):
 
-            print foundFriend
-
-            get_url(self.driver, "https://www.facebook.com/search/"+typeToSearchFor+"/?q="+foundFriend)
-            self.driver.get_element(data="//*[@id=\"BrowseResultsContainer\"]/div/div", name="userInfo", type="xpath")
-            data = self.driver.get_attribute(name="userInfo", atr="data-bt")
-            userId = re.search("id\":(\d*),", data).group(1)
+            userId = fbFriends[foundFriend]
             
         return userId
 
@@ -759,7 +728,7 @@ class Facebook():
 
 class Twitter():
     
-    def __init__(self, settings, driver, logger, getConfirmation, speak):
+    def __init__(self, settings, driver, logger, getConfirmation, speak, emitter):
 
         self.log = logger
         self.settings = settings
@@ -767,15 +736,12 @@ class Twitter():
         self.api = None
         self.getConfirmation = getConfirmation
         self.speak = speak
+        self.emitter = emitter
 
         self.auth = Auth(settings, driver, logger)
         self.initApi()
-        if "TwFriends" in self.settings:
-            self.twFriends = self.settings["TwFriends"]
-        else: 
-            self.twFriends = None
-        # print self.getFriendStatus("Ingrid de Valbray")
-        # print self.retweet("Ingrid de Valbray")
+       
+        self.twFriends = None
        
 
     def initApi(self):
@@ -848,7 +814,7 @@ class Twitter():
             resp, content = client.request(access_token_url, "POST")
             access_token = dict(urlparse.parse_qsl(content))
 
-            if access_token is not None:
+            if access_token is not None and 'oauth_token' in access_token:
                 self.settings["twUserAccessToken"] = access_token['oauth_token']
                 self.settings["twUserAccessTokenSecret"] = access_token['oauth_token_secret']
                 return self.login()
@@ -859,10 +825,9 @@ class Twitter():
 
     def logout(self):
         self.settings["twUserAccessToken"] = None
-        self.driver.shutdown()
-        self.driver = BrowserControl(emitter)
-        time.sleep(2)
-        return not self.auth.isLoggedInTw()
+        driverRestarted = restartDriver(self.driver)
+        # return not self.auth.isLoggedInTw() and driverRestarted
+        return True
 
     def post(self, message, to="me"):
         if self.login():
@@ -874,6 +839,7 @@ class Twitter():
                 friendFound = findMatchingString(to, self.getFriends().keys())
                 if self.getConfirmation("person.confirmation", dict( person=friendFound )):
                     self.api.PostUpdate("@"+self.getFriends()[friendFound]["username"]+" "+message)
+                    return True
                 else:
                     return False
             
@@ -905,7 +871,7 @@ class Twitter():
             friendFound = findMatchingString(friend, self.getFriends().keys())
             if self.getConfirmation("person.confirmation", dict( person=friendFound )):
                 friendObject=self.getFriends()[friendFound]
-                self.api.PostDirectMessage(message, user_id=friendObject["status"]["id"], screen_name=friendObject["username"])
+                self.api.PostDirectMessage(message, user_id=friendObject["id"], screen_name=friendObject["username"])
                 return True
             else:
                 return False
@@ -920,7 +886,6 @@ class Twitter():
                 for u in users:
                     toReturn[u.name]={"username":u.screen_name, "id":u.id, "status":{"text":u.status.text, "id":u.status.id}}
                 
-                self.settings["twFriends"] = toReturn
                 return toReturn
             else:
                 return self.twFriends
@@ -1032,15 +997,12 @@ class Auth:
             self.driver.send_keys_to_element(text="RETURN", name="userCodeElement", special=True)
 
             time.sleep(1)
-            print "--- First Confirmation"
             self.driver.get_element(data="__CONFIRM__", name="firstConfirmation", type="name")
             self.driver.click_element("firstConfirmation")
             time.sleep(2)
-            print "--- Second Confirmation"
             self.driver.get_element(data="__CONFIRM__", name="secondConfirmation", type="name")
             self.driver.click_element("secondConfirmation")
             time.sleep(2)
-            print "--- Third Confirmation"
             self.driver.get_element(data="__CONFIRM__", name="thirdConfirmation", type="name")
             self.driver.click_element("thirdConfirmation")
             time.sleep(1)
@@ -1142,6 +1104,10 @@ def getAllData(data, code):
                 exec(code)
     
     return toReturn
+
+def restartDriver(driver):
+    print "restarting driver"
+
 
 def create_skill():
     return SocialMediaSkill()

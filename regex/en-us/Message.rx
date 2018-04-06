@@ -1,1 +1,1 @@
-(message|send|text) (?P<Message>.*?) (to) 
+(message|send|text) (?P<Message>.+) (to) 

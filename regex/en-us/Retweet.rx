@@ -1,1 +1,1 @@
-(retweet|share) (?P<Person>.*)
+(retweet|tweet) (?P<Retweet>.*)

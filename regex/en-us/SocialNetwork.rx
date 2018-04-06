@@ -1,1 +1,1 @@
-(at|on|in|to|from)? (?P<SocialNetwork>.*)?
+(at|on|in|to|from)? (?P<SocialNetwork>.+)

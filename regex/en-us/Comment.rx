@@ -1,1 +1,1 @@
-(comment|comment on) (?P<Person>.*) (profile picture|picture|pic|photo|profile photo) (?P<Comment>.*)
+(comment) (?P<Comment>.*) (on|to)
