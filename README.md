@@ -20,10 +20,13 @@ Thanks to Mycroft-Social-Network-Manager, you can interact with Mycroft in such 
     >Logout
 * Send a message to a friend
     >Message [message_text] to [friend_name]
+
     >Send [message_text] to [friend_name]
+    
     >Text [message_text] to [friend_name]
 * Post / tweet something on your wall
     >Post [message_text] 
+
     >Publish [message_text] 
 * Post / tweet something to a friend's wall (tags the friend in your tweet on Tweeter)
     >Share [message_text] to [friend_name]
@@ -32,12 +35,16 @@ Thanks to Mycroft-Social-Network-Manager, you can interact with Mycroft in such 
 
 * Comment something on a friend profile picture
     >Comment [message_text] on [friend_name] profile picture
+
     >Comment [message_text] on [friend_name] pic
+    
     >Comment [message_text] on [friend_name] photo
 
 * Like a friend profile picture
     >Like the profile picture of [friend_name]
+
     >Like the pic of [friend_name]
+    
     >Like the photo of [friend_name]
 
 * Know your number of friends of Facebook
@@ -47,11 +54,14 @@ Thanks to Mycroft-Social-Network-Manager, you can interact with Mycroft in such 
 
 * Retweet the last tweet of a friend
     >Retweet [friend_name] 
+
     >Tweet [friend_name] 
 
 * Reads the last tweet of a friend
     >Get the last tweet of [friend_name]
+
     >Read the tweeter status of [friend_name]
+    
     >Fetch the last post of [friend_name]
 
 
