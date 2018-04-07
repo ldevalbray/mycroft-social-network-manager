@@ -1,1 +1,1 @@
-(retweet|tweet) (?P<Retweet>.*)
+(retweet|tweet|retweets|read tweet) (?P<Retweet>.*)

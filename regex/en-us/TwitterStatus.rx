@@ -1,1 +1,1 @@
-(get|fetch|read) (?P<TwitterStatus>.+) (twitter status)
+(get|fetch|read|of) (?P<TwitterStatus>.+) (twitter status)?
