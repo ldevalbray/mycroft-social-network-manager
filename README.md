@@ -90,6 +90,80 @@ However, browser_service should be made into a priority skill in the mycroft con
       },
 ```
 
+### Requirements
+
+In order to run the skill you will need to create two apps, one on Facebook and one on Twitter.
+
+Once this done, you will need to activate **facebook login module** on the facebook app and configure it for **devices**.
+
+Then, all what's left to do is enter those informations in [Mycroft Home](https://home.mycroft.ai/)
+
+```sh
+    {
+        "name": "LoginFB",
+        "fields": [
+            {
+                "name": "FacebookEmail",
+                "type": "email",
+                "label": "Email",
+                "value": ""
+            },
+            {
+                "name": "FacebookPassword",
+                "type": "password",
+                "label": "Password",
+                "value": ""
+            },
+            {
+                "name": "fbAppAccessToken",
+                "type": "text",
+                "label": "Facebook App Access Token",
+                "value": ""
+            }
+        ]
+    },
+    {
+        "name": "LoginTW",
+        "fields": [
+            {
+                "name": "TwitterEmail" ,
+                "type": "email",
+                "label": "Email",
+                "value": ""
+            },
+            {
+                "name": "TwitterPassword",
+                "type": "password",
+                "label": "Password",
+                "value": ""
+            },
+            {
+                "name": "TwitterPhoneNumber",
+                "type": "text",
+                "label": "Phone Number",
+                "value": ""
+            },
+            {
+                "name": "twConsumerKey",
+                "type": "text",
+                "label": "Twitter App Consumer Key",
+                "value": ""
+            },
+            {
+                "name": "twConsumerSecret",
+                "type": "text",
+                "label": "Twitter App Consumer Secret",
+                "value": ""
+            }
+        ]
+    }
+
+```
+
+NOTE : The **Facebook App Access Token** is your app id concatenated with your client token (can be found in the app advanced settings) : **[your_app_id|client_Token]**
+
+In order for the skill to fully work, all those informations should be entered.
+
 ### Tech
 
 Mycroft-Social-Network-Manager uses a number of open source projects and languages to work properly:
