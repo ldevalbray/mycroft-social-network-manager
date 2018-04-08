@@ -1,0 +1,10 @@
+{
+    "utterance": "comment test on louis de valbray profile picture",
+    "intent_type": "CommentIntent",
+    "intent": {
+      "CommentIntentKeyword": "comment",
+      "Comment":"test",
+      "Person":"louis de valbray"
+    },
+    "expected_response": "(Comment posted successfully !)"
+  }

@@ -1,0 +1,9 @@
+{
+  "utterance": "like louis de valbray profile picture",
+  "intent_type": "LikeIntent",
+  "intent": {
+    "LikeIntentKeyword": "like",
+    "Person":"louis de valbray"
+  },
+  "expected_response": "(Liked the profile picture succesfully !)"
+}

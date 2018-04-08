@@ -1,0 +1,8 @@
+{
+    "utterance": "login",
+    "intent_type": "LoginIntent",
+    "intent": {
+      "LoginIntentKeyword": "login"
+    },
+    "expected_response": "(Logged in successfully)"
+  }

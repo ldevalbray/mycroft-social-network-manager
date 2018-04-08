@@ -89,9 +89,24 @@ class SocialNetworksManagerSkill(MycroftSkill):
         #Create an instance of an automated browser (here, we use a Mycroft specific SELENIUM browser, that can be use by all Mycroft skills)
         self.driver = BrowserControl(emitter)
 
+        if self.checkSettings():
+            
+            #Declare and initialize the two social networks we will be using : Twitter and Facebook. 
+            #This will log the user in both if the email, password and access tokens have been provided
+            self.tw = Twitter(self.settings, self.driver, self.log, self.getConfirmation, self.speak, emitter)
+            self.fb = Facebook(self.settings, self.driver, self.log, self.getConfirmation, self.speak, emitter)
+
+            #Declare the intents
+            self.declareIntents()
+
+        else:
+            self.speak("Please, enter all the informations stated on the Mycroft Home website in order for your Mycroft social network manager skill to run ... Thank you !")
+
+    #Checking if the user entered all the informations needed for the skill to run in self.settings
+    def checkSettings(self):
         #self.settings is a dictionnary internal to Mycroft. It is accessible by the user from Mycroft.Home.com and permits the skill to store data persistently in between skill sessions
         #We store tw and fb access tokens in order to init the APIs
-        #If the user did not do anything on Mycroft.Home, intialize the access tokens to None
+        #If it is the first use of the skill, intialize the access tokens to None
         if "twUserAccessToken" not in self.settings:
             self.settings["twUserAccessToken"] = None
         if "twUserAccessTokenSecret" not in self.settings:
@@ -102,13 +117,18 @@ class SocialNetworksManagerSkill(MycroftSkill):
         if "fbUserAccessTokenExpirationDate" not in self.settings:
             self.settings["fbUserAccessTokenExpirationDate"] = None 
 
-        #Declare and initialize the two social networks we will be using : Twitter and Facebook. 
-        #This will log the user in both if the email, password and access tokens have been provided
-        self.tw = Twitter(self.settings, self.driver, self.log, self.getConfirmation, self.speak, emitter)
-        self.fb = Facebook(self.settings, self.driver, self.log, self.getConfirmation, self.speak, emitter)
+        infoNeeded = ["TwitterEmail", "TwitterPassword", "FacebookPassword", "FacebookEmail", "TwitterPhoneNumber", "fbAppAccessToken", "twConsumerKey", "twConsumerSecret"]
 
-        #Declare the intents
-        self.declareIntents()
+        checkSettings = True
+
+        for needed in infoNeeded:
+            if needed not in self.settings:
+                checkSettings= False 
+            elif not self.settings[needed]:
+                checkSettings= False 
+
+        return checkSettings
+
 
     #Declare the intents. An intent is some sentence or keyword that will trigger an action in Mycroft
     def declareIntents(self):
@@ -138,7 +158,7 @@ class SocialNetworksManagerSkill(MycroftSkill):
         self.register_intent(message_intent, 
                              self.handle_message_intent)
 
-        #post test to louis 
+        #share test to louis 
         share_intent = IntentBuilder("ShareIntent"). \
             require('ShareIntentKeyword'). \
             require('Share'). \
@@ -166,7 +186,7 @@ class SocialNetworksManagerSkill(MycroftSkill):
         self.register_intent(comment_intent,
                              self.handle_comment_intent)
 
-        #like the profile picture of louis de valbray
+        #like louis de valbray profile picture
         like_intent = IntentBuilder("LikeIntent"). \
             require('LikeIntentKeyword'). \
             require('Person'). \
@@ -295,7 +315,7 @@ class SocialNetworksManagerSkill(MycroftSkill):
     def handle_share_intent(self, message):
         #Gets the message the user wants to post thanks to regexes
         post = message.data.get("Share")
-        #Gets the person the user wants to post to thanks to regexes
+        #Gets the person the user wants to post to thanks to regexesPost something
         person = message.data.get("Person")
         #Asks the user which social network he wants to perform the action on
         socialSaid = self.getSocialNetworkConfirmation()
@@ -498,11 +518,14 @@ class Facebook():
 
         #check if fb token has expired or not
         if "fbUserAccessTokenExpirationDate" in self.settings:
-            expToken = self.settings["fbUserAccessTokenExpirationDate"]
-            expDate = datetime.datetime.fromtimestamp(float(expToken)).strftime('%Y-%m-%d %H:%M:%S')
-            dateNow = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if self.settings["fbUserAccessTokenExpirationDate"]:
+                expToken = self.settings["fbUserAccessTokenExpirationDate"]
+                expDate = datetime.datetime.fromtimestamp(float(expToken)).strftime('%Y-%m-%d %H:%M:%S')
+                dateNow = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            if expDate < dateNow:
+                if expDate < dateNow:
+                    expired = True
+            else:
                 expired = True
 
         #If no user access token or expired, then login to fb API
@@ -1098,13 +1121,13 @@ class Auth:
     #Logs the user to twitter with selenium
     def signInTw(self, url):
         #Checks if the user is not already logged in
-        isLoggedIn = self.isLoggedInTw()
+        isLoggedIn = self.isLoggedInTw() 
         #If not logged in, log him in
         if not isLoggedIn:
             self.driver.open_url(url)
             time.sleep(2)
-            self.driver.get_element(data="//*[@id=\"page-container\"]/div/div[1]/form/fieldset/div[1]/input", name="emailInput", type="xpath")
-            self.driver.get_element(data="//*[@id=\"page-container\"]/div/div[1]/form/fieldset/div[2]/input", name="pwInput", type="xpath")
+            self.driver.get_element(data="//*[@id=\"username_or_email\"]", name="emailInput", type="xpath")
+            self.driver.get_element(data="//*[@id=\"password\"]", name="pwInput", type="xpath")
             self.driver.send_keys_to_element(text=self.settings["TwitterEmail"], name="emailInput", special=False)
             self.driver.send_keys_to_element(text=self.settings["TwitterPassword"], name="pwInput", special=False)
             self.driver.send_keys_to_element(text="RETURN", name="pwInput", special=True)

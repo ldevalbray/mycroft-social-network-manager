@@ -1,7 +1,9 @@
 {
-    "utterance": "Post",
+    "utterance": "post something",
     "intent_type": "PostIntent",
     "intent": {
-      "HowAreYouKeyword": "post"
-    }
+      "PostIntentKeyword": "post",
+      "Post":"something"
+    },
+    "expected_response": ".*(posted|Posted).*"
   }

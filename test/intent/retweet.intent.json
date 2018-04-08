@@ -1,0 +1,9 @@
+{
+    "utterance": "retweet louis de valbray",
+    "intent_type": "RetweetIntent",
+    "intent": {
+      "RetweetIntentKeyword": "retweet",
+      "Retweet":"louis de valbray"
+    },
+    "expected_response": "(Retweeted)"
+  }

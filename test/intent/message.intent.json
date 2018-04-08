@@ -1,0 +1,10 @@
+{
+    "utterance": "message test to louis de valbray",
+    "intent_type": "MessageIntent",
+    "intent": {
+      "MessageIntentKeyword": "message",
+      "Message":"test",
+      "Person":"louis de valbray"
+    },
+    "expected_response": "(message sent|messaging done) .*"
+  }

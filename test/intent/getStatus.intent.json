@@ -1,0 +1,9 @@
+{
+    "utterance": "get louis de valbray status",
+    "intent_type": "FriendsStatusIntent",
+    "intent": {
+      "StatusIntentKeyword": "get",
+      "TwitterStatus":"louis de valbray"
+    },
+    "expected_response": "(Last tweet).*"
+  }

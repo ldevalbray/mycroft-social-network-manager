@@ -1,0 +1,8 @@
+{
+    "utterance": "logout",
+    "intent_type": "LogoutIntent",
+    "intent": {
+      "LogoutIntentKeyword": "logout"
+    },
+    "expected_response": "(Logged out successfully)"
+  }

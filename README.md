@@ -81,6 +81,12 @@ Installing Mycroft-Social-Network-Manager skill should automatically install [br
 However, browser_service should be made into a priority skill in the mycroft config file :
 
 ```sh
+$ cd mycroft-core/mycroft/configuration/
+```
+
+Open the **mycroft.conf** file with your favourite text editor
+
+```sh
     // General skill values
       "skills": {
         ...
@@ -163,6 +169,29 @@ Then, all what's left to do is enter those informations in [Mycroft Home](https:
 NOTE : The **Facebook App Access Token** is your app id concatenated with your client token (can be found in the app advanced settings) : **[your_app_id|client_Token]**
 
 In order for the skill to fully work, all those informations should be entered.
+
+### Testing
+
+For testing, we use [Mycroft automatic testing](https://mycroft.ai/documentation/skills/automatic-testing/).
+All the tests are in *mycroft-social-network-manager/test/intent/*
+
+In order to test the skill, you will need to **switch branch** on Mycroft-core to [feature/carstens-skill-tester](https://github.com/MycroftAI/mycroft-core/tree/feature/carstens-skill-tester)
+
+```sh
+git checkout origin/feature/carstens-skill-tester
+```
+
+(You'll maybe need to redo the changes to **mycroft.conf** we've done in the master/dev branch about the priority skills --> see *Instalation*)
+
+Then, **go to** *mycroft-core/test/integrationtests/skills/*, **start** *Mycroft virtualenv* and **run** *skill_developers_testrunner.py*
+
+```sh
+cd /test/integrationtests/skills/
+workon mycroft
+python skill_developers_testrunner.py
+```
+
+This should run the tests
 
 ### Tech
 

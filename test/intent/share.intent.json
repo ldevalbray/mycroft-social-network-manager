@@ -1,0 +1,10 @@
+{
+    "utterance": "share test to louis de valbray",
+    "intent_type": "ShareIntent",
+    "intent": {
+      "ShareIntentKeyword": "share",
+      "Share":"test",
+      "Person":"louis de valbray"
+    },
+    "expected_response": ".*(posted|Posted).*"
+  }

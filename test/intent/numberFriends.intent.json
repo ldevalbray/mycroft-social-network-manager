@@ -1,0 +1,8 @@
+{
+    "utterance": "how many friends do i have",
+    "intent_type": "FriendsNumberIntent",
+    "intent": {
+      "NumberOfFriendsIntentKeyword": "friends"
+    },
+    "expected_response": ".*(friends on facebook)"
+  }
