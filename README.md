@@ -100,7 +100,8 @@ Open the **mycroft.conf** file with your favourite text editor
 
 In order to run the skill you will need to create two apps, one on Facebook and one on Twitter.
 
-Once this done, you will need to activate **facebook login module** on the facebook app and configure it for **devices**.
+Once this done, you will need to configure **facebook login module** on the facebook app and configure it for **devices** (Activate "
+Login from Devices" in your Facebook Login settings).
 
 Then, all what's left to do is enter those informations in [Mycroft Home](https://home.mycroft.ai/)
 
