@@ -581,8 +581,7 @@ class Facebook():
         self.messengerClient.logout()
         self.messengerClient = None
         self.log.info("-- User logged out --")
-        #TODO
-        #return not self.auth.isLoggedInFb() and driverRestarted
+   
         return True
 
 
@@ -809,30 +808,6 @@ class Facebook():
             
         return userId
 
-    #UNUSED in Mycroft but working methods - can be used in the future #TODO
-    
-    # def getComments(self, postId, userId='me'):
-    #     if self.login():
-    #         if(userId=='me'):
-    #             userId = self.userInfo["id"]
-    #         return getAllData(self.api.get_connections(id=userId+"_"+postId, connection_name='comments'), "toReturn[d[\"from\"]] = d[\"message\"]") 
-    #     else:
-    #         return None
-
-    # def getLikes(self, postId, userId='me'):
-    #     if self.login():
-    #         if(userId=='me'):
-    #             userId = self.userInfo["id"]
-    #         return getAllData(self.api.get_connections(id=userId+"_"+postId, connection_name='likes'), "toReturn[d[\"name\"]] = d[\"id\"]") 
-    #     else:
-    #         return None
-
-    # def search(self, query, typeToSearchFor="user"):
-    #     if self.login():
-    #         return getAllData(self.api.search(type=typeToSearchFor,q=query), "toReturn[d[\"name\"]] = d[\"id\"]") 
-    #     else:
-    #         return None
-
 #Class managing all the Twitter related actions
 class Twitter():
     
@@ -948,8 +923,7 @@ class Twitter():
     def logout(self):
         self.settings["twUserAccessToken"] = None
         driverRestarted = restartDriver(self.driver)
-        #TODO
-        # return not self.auth.isLoggedInTw() and driverRestarted
+     
         return True
 
     #Tweet to the user timeline, if to is different from "me", tag the user specified in the tweet (using TW API)
@@ -1264,7 +1238,7 @@ def getAllData(data, code):
     
     return toReturn
 
-#Restarts the driver (Mycroft inner selenium driver currently has an issue with it ...) #TODO
+#Restarts the driver (Mycroft inner selenium driver browser_service, a dependency, currently has an issue with it ...) #TODO
 def restartDriver(driver):
     print "restarting driver"
 
