@@ -5,7 +5,7 @@ Mycroft-Social-Network-Manager is a *skill* developped for [Mycroft][mycroftwebs
 
 > It permits the user to manage his social networks
 > (for now, Twitter and Facebook)
-> threw Mycroft personal assistant
+> through Mycroft personal assistant
 > WITH YOUR VOICE !
 
 ### Usage
