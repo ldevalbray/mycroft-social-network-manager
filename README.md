@@ -16,7 +16,8 @@ Thanks to Mycroft-Social-Network-Manager, you can interact with Mycroft in such 
 
 * Login to twitter and facebook
     >Login
-* Logout from twitter and facebook
+
+* Logout from twitter and facebook ( !! Be careful with the use of logout, it will erase the facebook and twitter app access tokens you have entered in Mycroft Home !! )
     >Logout
 * Send a message to a friend
     >Message [message_text] to [friend_name]
@@ -55,14 +56,8 @@ Thanks to Mycroft-Social-Network-Manager, you can interact with Mycroft in such 
 * Retweet the last tweet of a friend
     >Retweet [friend_name] 
 
-    >Tweet [friend_name] 
-
 * Reads the last tweet of a friend
     >Get the last tweet of [friend_name]
-
-    >Read the tweeter status of [friend_name]
-    
-    >Fetch the last post of [friend_name]
 
 
 ### Installation

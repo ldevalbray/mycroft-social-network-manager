@@ -44,7 +44,6 @@ from mycroft.skills.settings import SkillSettings
 from adapt.intent import IntentBuilder
 from mycroft.util.log import getLogger
 from mycroft.dialog import DialogLoader
-from mycroft.messagebus.message import Message
 from mycroft.api import Api
 from mycroft.skills.core import MycroftSkill, intent_handler, intent_file_handler
 from mycroft.util.log import LOG
@@ -599,7 +598,7 @@ class Facebook():
                     self.driver.click_element("post_box")
                     self.driver.send_keys_to_element(text=message, name="post_box", special=False)
                     time.sleep(5)
-                    self.driver.get_element(data=".//*[@id='timelineBody']/div[1]/div[1]/form/table/tbody/tr/td[2]/div/input", name="post_button", type="xpath")
+                    self.driver.get_element(data="view_post", name="post_button", type="name")
                     return self.driver.click_element("post_button")
 
                 else:
@@ -608,11 +607,6 @@ class Facebook():
 
             else:
 
-                # if tag != "none":
-                #     tagId = self.getFriends()[findMatchingString(tag, self.getFriends().keys())]["taggableID"]
-                #     post = self.api.put_object(parent_object=to, connection_name='feed',
-                #             message=message, tags=[tagId])
-                # else:
                 post = self.api.put_object(parent_object=to, connection_name='feed',
                         message=message)
                 
@@ -641,7 +635,7 @@ class Facebook():
             return False
            
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
     #Likes a friend profile pic
@@ -660,7 +654,7 @@ class Facebook():
             self.log.error("-- Could not like the profile pic, user not logged in --")
             return False
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
     #comment a friend profile pic
@@ -678,7 +672,7 @@ class Facebook():
             self.log.error("-- Could not comment the profile pic, user not logged in --")
             return False
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
     #Likes a post (Uses selenium)
@@ -740,7 +734,7 @@ class Facebook():
                     self.fbFriends = friendsList
                 
                 except Exception as e: 
-                    self.log.error("-- An error occured : \n" + e + " \n ------")
+                    self.log.error("-- An error occured : \n" + str(e) + " \n ------")
                     return False
             
             return self.fbFriends
@@ -789,7 +783,7 @@ class Facebook():
             return re.search(findString, picSrc).group(1)
 
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return None
     
     #Method to get a friend Id
@@ -959,7 +953,7 @@ class Twitter():
             return None
 
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
     #Tweet a friend last tweet (using TW API)
@@ -978,7 +972,7 @@ class Twitter():
             return False
 
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
     #Message a friend (using TW API) --> can only message a friend that follows back the user
@@ -998,7 +992,7 @@ class Twitter():
             return False
 
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
     #Gets the user friends (using TW API)
@@ -1021,7 +1015,7 @@ class Twitter():
             return None
 
         except Exception as e: 
-            self.log.error("-- An error occured : \n" + e + " \n ------")
+            self.log.error("-- An error occured : \n" + str(e) + " \n ------")
             return False
 
 # This class manages all the authentication part of the social networs (Signing in, Logging in (to the SDKs) and checks if the user is signed in)
@@ -1100,8 +1094,10 @@ class Auth:
         if not isLoggedIn:
             self.driver.open_url(url)
             time.sleep(2)
-            self.driver.get_element(data="//*[@id=\"username_or_email\"]", name="emailInput", type="xpath")
-            self.driver.get_element(data="//*[@id=\"password\"]", name="pwInput", type="xpath")
+     
+            self.driver.get_element(data="//*[@id=\"page-container\"]/div/div[1]/form/fieldset/div[1]/input", name="emailInput", type="xpath")
+            self.driver.get_element(data="//*[@id=\"page-container\"]/div/div[1]/form/fieldset/div[2]/input", name="pwInput", type="xpath")
+
             self.driver.send_keys_to_element(text=self.settings["TwitterEmail"], name="emailInput", special=False)
             self.driver.send_keys_to_element(text=self.settings["TwitterPassword"], name="pwInput", special=False)
             self.driver.send_keys_to_element(text="RETURN", name="pwInput", special=True)
